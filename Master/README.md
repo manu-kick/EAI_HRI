@@ -13,7 +13,6 @@ python3 app.py
 
 ## Endpoints
 1. /api/identify_user (starting from an image, the server runs an algorithm and identifies the user in the database, if the user is not present, it creates a new user in the database and returns the user's profile)
-2. /api/send_user_details
 
 3. /api/get_game (the master knows which game to send to the user)
 4. /api/elaborate_mental_model (elaborate the mental model of the user setting a difficulty level based on the user's profile)
