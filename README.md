@@ -8,3 +8,11 @@ This repo contains the implementation of the different modules of the project:
     - Mental Model Module
     - Database Service Module
 - Pepper Module
+
+
+
+
+
+## States
+0 - New session, just arrived a user in front of the robot, the robot has to ask the user if he wants to play to the favorite game
+1 

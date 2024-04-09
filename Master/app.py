@@ -44,7 +44,23 @@ class TicTacToeModel(db.Model):
     user_id = db.Column(db.Integer)
     outcome = db.Column(db.String(1)) #X, O, D (Draw)
 
+class SessionModel(db.Model):
+    __tablename__ = 'Sessions'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer)
+    state = db.Column(db.String(255))
 
+#write the SQL to alter the column game_id in the session table and call it state
+# ALTER TABLE Sessions ADD COLUMN state VARCHAR(255) NOT NULL DEFAULT 'active';
+
+#Drop the column game_id
+# ALTER TABLE Sessions DROP COLUMN game_id;
+
+#make the id column of the Sessions table the primary key and autoincrement
+# ALTER TABLE Sessions MODIFY COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
+
+# remove user_id as foreign key
+# ALTER TABLE Sessions DROP FOREIGN KEY Sessions_ibfk_1;
 
 @app.route('/')
 def hello_world():
@@ -86,12 +102,22 @@ def identify_user():
     # Get the Post data
     # image = request.files['image']
 
-    # Algorithm to identify the user
+    # TODO Algorithm to identify the user
     # Call the inference of a model from a module (user identification) 
 
     # Create an example user profile
-    user = User('John', 'Doe', 25)
+    user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id=0)
+
+
+    # create a session in the session table in the database (session_id, user_id, game_id)
+    new_session = SessionModel(user_id=user.id, state=0)
+    db.session.add(new_session)
+    db.session.commit()
+
     return user.get_profile()
+
+
+
 
 
 
@@ -106,25 +132,27 @@ def elaborate_mental_model():
     return 'Elaborate Mental Model'
 
 
-# 5. /serve_game/{game_name} (serve the game to the user)
-@app.route('/serve_game/<game_name>')
-def serve_game(game_name):
-    assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
+# 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
+# @app.route('/serve_game/<game_name>')
+# def serve_game(game_name):
+#     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
 
-    # let's suppose we have for now the User Id of the current user
-    user_id = 0
-    # Get the profile of the user with user_id from the database
+#     # let's suppose we have for now the User Id of the current user
+#     user_id = 0
+#     # Get the profile of the user with user_id from the database
 
-    user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id = user_id)
-
-    if game_name == 'tic_tac_toe':
-        # serve the html file in the /tictactoe/tictactoe.hmtl folder
-        return render_template('/tictactoe/tictactoe.html', user=user.get_profile())
+#     user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id = user_id)
 
 
-    else:
-        # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
-        return "Serve semantic ping pong game"
+#     #TODO Suppose here to send message to 
+#     if game_name == 'tic_tac_toe':
+#         # serve the html file in the /tictactoe/tictactoe.hmtl folder
+#         return render_template('/tictactoe/tictactoe.html', user=user.get_profile())
+
+
+#     else:
+#         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
+#         return "Serve semantic ping pong game"
         
 
 # 6. /api/{game_name}/ask_user_feedback (receive the feedback from the user and store it in the database)
@@ -142,26 +170,26 @@ def emit_pepper_feedback(game_name):
     return 'Emit Pepper Feedback ' + game_name
 
 # 8. /api/{game_name}/store_result (store the result of the game in the database)
-@app.route('/api/<game_name>/store_result',  methods=['POST'])
-def store_result(game_name):
-    # Get the Post data "type" and "user_id"
-    data = request.json
-    if game_name == 'tic_tac_toe':
-        type_ = data['type']
-        user_id = data['user_id']
+# @app.route('/api/<game_name>/store_result',  methods=['POST'])
+# def store_result(game_name):
+#     # Get the Post data "type" and "user_id"
+#     data = request.json
+#     if game_name == 'tic_tac_toe':
+#         type_ = data['type']
+#         user_id = data['user_id']
 
-        # Store the result in the database in the table TicTacToe
-        new_result = TicTacToeModel(user_id=user_id, outcome=type_)
-        db.session.add(new_result)
-        db.session.commit()
-    else:
-        # TO implement the semantic ping pong
-        raise NotImplementedError
+#         # Store the result in the database in the table TicTacToe
+#         new_result = TicTacToeModel(user_id=user_id, outcome=type_)
+#         db.session.add(new_result)
+#         db.session.commit()
+#     else:
+#         # TO implement the semantic ping pong
+#         raise NotImplementedError
 
-    return {
-        'result': 'success'
-    }
+#     return {
+#         'result': 'success'
+#     }
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5002)
