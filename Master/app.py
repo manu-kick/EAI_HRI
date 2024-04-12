@@ -99,14 +99,18 @@ def identify_user():
     Given an image, run the algorithm to identify the user
     and return the user's profile
     '''
-    # Get the Post data
-    # image = request.files['image']
+    # Get the Post data -> from Gianmarco
+    # TODO
+    # image = request.files['image'] 
 
-    # TODO Algorithm to identify the user
+
+    # TODO Algorithm to identify the user --> Giancarlo
     # Call the inference of a model from a module (user identification) 
+    #user_id = detect_user(image)
 
     # Create an example user profile
-    user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id=0)
+    # user = UserModel.query.filter_by(id=user_id).first()
+    user = User(user.name, user.surname, user.age, user.user_features, user.favorite_game, id = 1) # TODO Make the user_id dynamic
 
 
     # create a session in the session table in the database (session_id, user_id, game_id)
@@ -118,7 +122,19 @@ def identify_user():
 
 
 
+def detect_user(image):
+    '''
+    Given an image, detect the user, Run the algorithm to identify the user
+    1. Extract features from the image
+    2. Take the features of all the users from the database
+    3. Compare the features of the image with the features of the users
+    4. Return the user_id of the user that matches the most with the image
+    5. If the user is not present, create a new user in the database and return the user_id
+    '''
+    # TODO
+    user_id = 0
 
+    return  user_id
 
 
 # 3. /api/get_game (the master knows which game to send to the user)

@@ -22,7 +22,7 @@
                     <thead>
                         <tr>
                             <th>Session ID</th>
-                            <th>User Name</th>
+                            <th>User ID</th>
                             <th>Session State</th>
                         </tr>
                     </thead>
@@ -66,6 +66,8 @@
                     $('#sessionId').text(response.id);
                     $('#sessionUserName').text(response.user_id);
                     $('#sessionState').text(response.state);
+                    
+                    stateListener(SessionData);
                 },
                 error: function(err){
                     console.log(err);
@@ -88,25 +90,45 @@
         $(document).ready(function(){
             var SessionData = {};
         
-            getSession();
-            interfaceListener(SessionData);
-
-            setInterval(function(){
-                getSession();
-                interfaceListener(SessionData);
-            }, 30000);
+            SessionData = getSession();
+            
+            // setInterval(function(){
+            //     SessionData = getSession();
+            //     interfaceListener(SessionData);
+            // }, 5000);
         });
 
 
         // function to update the interface according to the session data
-        function interfaceListener(SessionData){
+        function stateListener(SessionData){
             // redirect to certain game page according to the session state Find all the possible states in the README.md
-            if(SessionData.state === 0){
-                // todo
-            } else {
-               alert ("State not managed yet")
+            if(SessionData.state == "0" ){
+                redirectUserFromState(SessionData.user_id);
             }
         }
+
+        function redirectUserFromState(user_id){
+            // ajax call to obtaine the favorite game of the user to use then to redirect to the correct game page
+            $.ajax({
+                url: '/api/get-favorite-game/'+user_id,
+                method: 'GET',
+                success: function(response){
+                    console.log(response);
+                    // redirect to the correct game page
+                    if(response.favorite_game == "tic tac toe"){
+                        window.location.href = '/serve_game/tic_tac_toe/'+user_id;
+                    }
+                    else{
+                        alert("Game not supported yet")
+                    }
+                },
+                error: function(err){
+                    console.log(err);
+                }
+            });
+        }
+
+
     </script>
 
 </body>

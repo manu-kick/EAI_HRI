@@ -93,50 +93,32 @@ def get_sessions():
         'state': return_session.state
     }
         
+@app.get("/api/get-favorite-game/<user_id>")
+def get_favorite_game(user_id):
+    # Query the user with the id 0
+    user = UserModel.query.filter_by(id=user_id).first()
+    return {
+        'favorite_game': user.favorite_game
+    }
+
 
 # 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
-@app.route('/serve_game/<game_name>')
-def serve_game(game_name):
+@app.route('/serve_game/<game_name>/<user_id>')
+def serve_game(game_name, user_id):
     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
-
-    # let's suppose we have for now the User Id of the current user
-    user_id = 0
     # Get the profile of the user with user_id from the database
 
-    user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id = user_id)
-
+    user = UserModel.query.filter_by(id=user_id).first()
+    user = User(user.name, user.surname, user.age, user.user_features, user.favorite_game, id = user_id)
 
     #TODO Suppose here to send message to 
     if game_name == 'tic_tac_toe':
         # serve the html file in the /tictactoe/tictactoe.hmtl folder
-        return render_template('/tictactoe/tictactoe.html', user=user.get_profile())
-
-
+        return render_template('/tictactoe.html', user=user.get_profile())
     else:
         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
         return "Serve semantic ping pong game"
     
-@app.route('/serve_game/')
-def serve_game(session):
-    
-    assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
-
-    # let's suppose we have for now the User Id of the current user
-    user_id = 0
-    # Get the profile of the user with user_id from the database
-
-    user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id = user_id)
-
-
-    #TODO Suppose here to send message to 
-    if game_name == 'tic_tac_toe':
-        # serve the html file in the /tictactoe/tictactoe.hmtl folder
-        return render_template('/tictactoe/tictactoe.html', user=user.get_profile())
-
-
-    else:
-        # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
-        return "Serve semantic ping pong game"
     
 
 # 8. /api/{game_name}/store_result (store the result of the game in the database)
