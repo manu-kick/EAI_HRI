@@ -92,7 +92,32 @@ def get_sessions():
         'user_id': return_session.user_id,
         'state': return_session.state
     }
-        
+
+
+@app.post("/api/change_favorite_game/<user_id>")
+def change_favorite_game(user_id):
+    # Get the user from the user_id
+    user = UserModel.query.filter_by(id=user_id).first()
+    user_ = user
+
+    # If the user has the favorite game tic tac toe, change it to semantic ping pong
+    if user_.favorite_game == 'tic tac toe':
+        user_.favorite_game = 'semantic ping pong'
+    else:
+        user_.favorite_game = 'tic tac toe'
+
+    # Update the user in the database
+    user = UserModel.query.filter_by(id=user_id).first()
+    user.favorite_game = user_.favorite_game
+    db.session.commit()
+
+    return user.favorite_game
+
+
+
+    
+
+
 @app.get("/api/get-favorite-game/<user_id>")
 def get_favorite_game(user_id):
     # Query the user with the id 0
@@ -107,17 +132,16 @@ def get_favorite_game(user_id):
 def serve_game(game_name, user_id):
     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
     # Get the profile of the user with user_id from the database
-
     user = UserModel.query.filter_by(id=user_id).first()
     user = User(user.name, user.surname, user.age, user.user_features, user.favorite_game, id = user_id)
 
-    #TODO Suppose here to send message to 
     if game_name == 'tic_tac_toe':
         # serve the html file in the /tictactoe/tictactoe.hmtl folder
         return render_template('/tictactoe.html', user=user.get_profile())
     else:
         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
-        return "Serve semantic ping pong game"
+        return render_template('/semanticpingpong.html', user=user.get_profile())
+
     
     
 
@@ -163,6 +187,7 @@ def change_session_status():
     data = request.json
     # Take the last session using the user_id
     session = SessionModel.query.filter_by(user_id=data['user_id']).first()
+    print(session.id)
 
     # Update the session status
     session.state = data['status']

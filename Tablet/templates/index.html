@@ -102,7 +102,7 @@
         // function to update the interface according to the session data
         function stateListener(SessionData){
             // redirect to certain game page according to the session state Find all the possible states in the README.md
-            if(SessionData.state == "0" ){
+            if(SessionData.state == "0" || "20" ){
                 redirectUserFromState(SessionData.user_id);
             }
         }
@@ -119,7 +119,7 @@
                         window.location.href = '/serve_game/tic_tac_toe/'+user_id;
                     }
                     else{
-                        alert("Game not supported yet")
+                        window.location.href = '/serve_game/semantic_ping_pong/'+user_id;
                     }
                 },
                 error: function(err){
