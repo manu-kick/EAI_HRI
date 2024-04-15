@@ -145,5 +145,39 @@ def store_result(game_name):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# SIMULATE THIS (THE FOLLOWING CODE) has to be placed in the pepper server
+@app.route("/api/change_session_status", methods=['POST'])
+def change_session_status():
+    data = request.json
+    # Take the last session using the user_id
+    session = SessionModel.query.filter_by(user_id=data['user_id']).first()
+
+    # Update the session status
+    session.state = data['status']
+    db.session.commit()
+
+    # PER GIANMARCO
+    # call Emit feedback pepper
+    # react_to_state(status)
+
+
+    return {
+        'result': 'success'
+    }
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

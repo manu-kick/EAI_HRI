@@ -87,6 +87,8 @@
     <button class="reset-btn btn btn-primary" onclick="resetGame()">New Game</button>
 
     <script>
+        var pepper_base_endpoint = ""
+
         let currentPlayer = 'X';
         let gameBoard = [
             ['', '', ''],
@@ -169,6 +171,14 @@
                     gameOver = true;
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    
+                    //if the current player is X change the status of the session to 1 that means that the robot should give a feedbak to the user
+                    if(currentPlayer === 'X'){
+                      changeStatus(1, `{{user.id}}`);
+                    }else{
+                    changeStatus(0, `{{user.id}}`);
+                    }
+
                     updateMessage('Player ' + currentPlayer + '\'s turn');
 
                     // Automatically make a random move for player O
@@ -180,6 +190,26 @@
                     }
                 }
             }
+        }
+
+        function changeStatus(status, user_id){
+            // TODO fix the endpoint
+            // url: pepper_endpoint+'/api/tic_tac_toe/change_status',
+            $.ajax({
+                url: '/api/change_session_status',
+                type: 'POST',
+                data: JSON.stringify({
+                    status: status, 
+                    user_id: `{{user.id}}`
+                }),
+                contentType: 'application/json',
+                success: function(response) {
+                    console.log('status changed');
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
         }
 
         function autoMove() {
