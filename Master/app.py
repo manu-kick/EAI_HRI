@@ -1,9 +1,13 @@
 from flask import Flask, render_template
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
+import numpy as np
 
 from User import User
 
+import cv2
+import face_recognition
+import dlib
 
 
 app = Flask(__name__)
@@ -62,6 +66,60 @@ class SessionModel(db.Model):
 # remove user_id as foreign key
 # ALTER TABLE Sessions DROP FOREIGN KEY Sessions_ibfk_1;
 
+datFile =  "shape_predictor_68_face_landmarks.dat"
+
+# Initialize dlib's face detector (HOG-based) and the facial landmark predictor
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(datFile)
+
+class Detector:
+    def __init__(self, ):
+        
+        self.tolerance = 0.5    # Similarity threshold
+        self.users_features = self.load_known_encodings()
+        #get the shape of the features
+        self.shape = self.users_features[0].shape
+        print("Users features loaded : ", self.users_features.shape)
+
+    def load_known_encodings(self):
+        all_users = UserModel.query.all()
+        # users = []
+        users_features = []
+        for user in all_users:
+            # the field user.user_features is a binary large object (BLOB) that needs to be converted to a string
+            features = user.user_features.decode('utf-8')
+           
+            # remove the \n and the spaces and convert the string to a numpy array
+            features = np.array(features.replace('\n', '').replace(' ', '').replace('[', '').replace(']', '').split(','), dtype=np.float32)
+            users_features.append(features)
+
+            # users.append(User(user.name, user.surname, user.age, features, user.favorite_game).get_profile())
+        # Convert the list of features to a numpy array (matrix)
+        users_features = np.array(users_features)
+        
+        return users_features
+    
+    def detect_user(self, image):
+        '''
+        image: image of the user 
+        '''
+        face_locations = face_recognition.face_locations(image)
+        face_encodings = face_recognition.face_encodings(image, face_locations)
+        
+        result = -1
+        
+        for face_encoding in face_encodings:
+            distances = face_recognition.face_distance(self.users_features, face_encoding)
+            best_match_index = distances.argmin()
+            
+            if distances[best_match_index] < self.tolerance:
+                # Return the index of the user_id of the best match
+                result = best_match_index
+                # return result
+            
+        return result
+        
+        
 @app.route('/')
 def hello_world():
     # Test connection to the database
@@ -101,16 +159,59 @@ def identify_user():
     '''
     # Get the Post data -> from Gianmarco
     # TODO
-    # image = request.files['image'] 
+    # image = request.files['image']
+    
+    image_path = "faces/WIN_20240415_18_41_06_Pro.jpg"
 
 
     # TODO Algorithm to identify the user --> Giancarlo
     # Call the inference of a model from a module (user identification) 
     #user_id = detect_user(image)
+    
+    det = Detector()
+    
+    
+    # # Path to detector
+    # datFile =  "shape_predictor_68_face_landmarks.dat"
+    # # Initialize dlib's face detector (HOG-based) and the facial landmark predictor
+    # detector = dlib.get_frontal_face_detector()
+    # predictor = dlib.shape_predictor(datFile)
+    
+    # # Load the input image
+    # image = cv2.imread(image_path)
+    # # Get encoding of the face
+    # face_locations = face_recognition.face_locations(image)
+    # face_encodings = face_recognition.face_encodings(image, face_locations)
+    
+    # # Take the user features from the db
+    # # Take the users (all) features from the db
+    # all_users = UserModel.query.all()
+    # # Take the array of users and return it as a json object
+    # users = []
+    # for user in all_users:
+    #     # the field user.user_features is a binary large object (BLOB) that needs to be converted to a string
+    #     features = user.user_features.decode('utf-8')
+    #     users.append(User(user.name, user.surname, user.age, features, user.favorite_game).get_profile())
+    
+    # #Create a matrix of the users features
+    # users_features = []
+    # for user in users:
+    #     users_features.append(user['features'])
+        
+    # print(users_features)
+    
+    # detc = Detector(users_features)
+    image = cv2.imread(image_path)
+    
+    inference = det.detect_user(image)
+    #fix the error Python type numpy.int64 cannot be converted
+    inference = int(inference)
 
     # Create an example user profile
-    # user = UserModel.query.filter_by(id=user_id).first()
-    user = User(user.name, user.surname, user.age, user.user_features, user.favorite_game, id = 1) # TODO Make the user_id dynamic
+    user_id = inference + 1 # Because the user_id starts from 1
+    user = UserModel.query.filter_by(id=user_id).first()
+    user_features = user.user_features.decode('utf-8')
+    user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id) # TODO Make the user_id dynamic
 
 
     # create a session in the session table in the database (session_id, user_id, game_id)
@@ -122,19 +223,19 @@ def identify_user():
 
 
 
-def detect_user(image):
-    '''
-    Given an image, detect the user, Run the algorithm to identify the user
-    1. Extract features from the image
-    2. Take the features of all the users from the database
-    3. Compare the features of the image with the features of the users
-    4. Return the user_id of the user that matches the most with the image
-    5. If the user is not present, create a new user in the database and return the user_id
-    '''
-    # TODO
-    user_id = 0
+# def detect_user(image):
+#     '''
+#     Given an image, detect the user, Run the algorithm to identify the user
+#     1. Extract features from the image
+#     2. Take the features of all the users from the database
+#     3. Compare the features of the image with the features of the users
+#     4. Return the user_id of the user that matches the most with the image
+#     5. If the user is not present, create a new user in the database and return the user_id
+#     '''
+#     # TODO
+#     user_id = 0
 
-    return  user_id
+#     return  user_id
 
 
 # 3. /api/get_game (the master knows which game to send to the user)
