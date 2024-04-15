@@ -170,39 +170,7 @@ def identify_user():
     
     det = Detector()
     
-    
-    # # Path to detector
-    # datFile =  "shape_predictor_68_face_landmarks.dat"
-    # # Initialize dlib's face detector (HOG-based) and the facial landmark predictor
-    # detector = dlib.get_frontal_face_detector()
-    # predictor = dlib.shape_predictor(datFile)
-    
-    # # Load the input image
-    # image = cv2.imread(image_path)
-    # # Get encoding of the face
-    # face_locations = face_recognition.face_locations(image)
-    # face_encodings = face_recognition.face_encodings(image, face_locations)
-    
-    # # Take the user features from the db
-    # # Take the users (all) features from the db
-    # all_users = UserModel.query.all()
-    # # Take the array of users and return it as a json object
-    # users = []
-    # for user in all_users:
-    #     # the field user.user_features is a binary large object (BLOB) that needs to be converted to a string
-    #     features = user.user_features.decode('utf-8')
-    #     users.append(User(user.name, user.surname, user.age, features, user.favorite_game).get_profile())
-    
-    # #Create a matrix of the users features
-    # users_features = []
-    # for user in users:
-    #     users_features.append(user['features'])
-        
-    # print(users_features)
-    
-    # detc = Detector(users_features)
     image = cv2.imread(image_path)
-    
     inference = det.detect_user(image)
     #fix the error Python type numpy.int64 cannot be converted
     inference = int(inference)
@@ -213,9 +181,13 @@ def identify_user():
     user_features = user.user_features.decode('utf-8')
     user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id) # TODO Make the user_id dynamic
 
-
+    if user.favorite_game == 'tic_tac_toe':
+        state_session = 0
+    else:
+        state_session = 20
+        
     # create a session in the session table in the database (session_id, user_id, game_id)
-    new_session = SessionModel(user_id=user.id, state=0)
+    new_session = SessionModel(user_id=user.id, state=state_session)
     db.session.add(new_session)
     db.session.commit()
 
