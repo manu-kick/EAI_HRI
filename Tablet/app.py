@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
 
+import json
 
 app = Flask(__name__)
 
@@ -41,9 +42,7 @@ class User:
         }
 
     def __str__(self):
-        return f'{self.name} {self.surname} ({self.age})'
-    
-
+        return self.name + ' ' + self.surname + ' (' + str(self.age) + ')'
 
 # Models for the database
 class UserModel(db.Model):
@@ -205,4 +204,8 @@ def change_session_status():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    # Read the configuration file from JSON
+    with open('../config.json') as json_file:
+        config = json.load(json_file)
+
+    app.run(host=config['master_ip'], debug=True, port=5001)

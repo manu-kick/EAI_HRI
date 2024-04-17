@@ -4,7 +4,8 @@ mysql-connector-python
 numpy
 
 # For face recognition (Giancarlo)
-opencv-python==4.5.5
-face_recognition 
+# Might need dlib==19.24.2 to work properly
+opencv-python
 dlib
 imutils
+face_recognition

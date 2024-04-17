@@ -13,10 +13,6 @@ Pepper needs Python 2.7.17 because NAOqi works with that specific version!
 For proper use, you should start the Docker container from [this](https://bitbucket.org/iocchi/hri_software/src/master/docker/) page, instead of installing a requirements file.
 
 ## Running
-There is a configuration file named `config.json` where you can set various parameters such as:
-- Pepper IP
-- Pepper port (<i>The one indicated in Choreographe</i>)
-- Sonar Distance Threshold
 
 ### Main Loop
 To run the main script, execute the following command in your terminal:

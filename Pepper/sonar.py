@@ -1,4 +1,16 @@
+# Hack to get the User class in here
+# Add the path to the Master/Tablet directory to the Python path
+master_dir = os.path.join(os.path.dirname(__file__), '..', 'Master')
+tablet_dir = os.path.join(os.path.dirname(__file__), '..', 'Tablet')
+sys.path.append(master_dir)
+sys.path.append(tablet_dir)
+
 import time
+import requests
+import os
+import sys
+
+from User import User
 
 class SonarDetector(object):
     def __init__(self, services, config):
@@ -14,6 +26,7 @@ class SonarDetector(object):
         # Threshold for the front sonar
         self.threshold = self.config['sonar_threshold'] # Default: 0.5 meters (50 cm)
         self.greet = False
+        self.user = User(name="", surname="", age="", features="", favorite_game="", id=None)
 
     """
     Check if the person is leaving or not.
@@ -23,11 +36,11 @@ class SonarDetector(object):
 
         if self.greet and ((sonar_front_value == 0.0) or (sonar_front_value > self.threshold)):
             self.greet = False
-            self.tts.say("Hey Gian, I see you are leaving. Goodbye!")
+            self.tts.say("Hey " + self.user.name + ", I see you are leaving. Goodbye!")
         
         if self.greet and ((sonar_back_value == 0.0) or (sonar_back_value > self.threshold)):
             self.greet = False
-            self.tts.say("Hey Gian, I see you are leaving. Goodbye!")
+            self.tts.say("Hey " + self.user.name + ", I see you are leaving. Goodbye!")
 
     """
     Get the sonar value from the front sonar sensor.
@@ -48,16 +61,31 @@ class SonarDetector(object):
         sonar_front_value, sonar_back_value = self.get_sonar_value()
 
         # In this case, we want to detect a person in front of the robot
-        # If the sonar front value is greater than the threshold, we greet the person
+        # If the sonar front value is smaller than the threshold, we greet the person
         if(sonar_front_value != 0.0) and (sonar_front_value < self.threshold and not self.greet):
             self.greet = True
             self.tts.say("Hello! Let me recognize you.")
 
-            print("GETTING THE IMAGE!")
             # Here we should call the face recognition module from the API
-            time.sleep(3.0)
+            # URL of the API endpoint
+            url = 'http://' + self.config['master_ip'] + ':5002/api/identify_user'
 
-            self.tts.say("Nice to meet you Gian! I am Pepper.")
+            # Sending POST request
+            print("Sending POST request to the API for Face Recognition...")
+            response = requests.post(url)
+
+            # Checking the response
+            if response.status_code == 200:
+                print("Request successful. Retrieving user...")
+                # Retrieving the image from the request
+                user = response.json()
+                self.user = User(name=user['name'], surname=user['surname'], age=user['age'], features=user['features'], favorite_game=user['favorite_game'], id=user['id'])
+            else:
+                print("Error: ", response.status_code)
+            
+            self.tts.say("Nice to meet you " + self.user.name + "! I am Pepper.")
+            time.sleep(2.0)
+
         elif(sonar_back_value != 0.0) and (sonar_back_value < self.threshold) and not self.greet:
             self.tts.say("Hey! I see you're behind me! Please come in front of me, so I can recognize you.")
         else:

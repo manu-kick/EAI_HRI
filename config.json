@@ -1,0 +1,6 @@
+{
+    "master_ip": "127.0.0.1",
+    "pepper_ip": "127.0.0.1",
+    "pepper_port": 34483,
+    "sonar_threshold": 0.5
+}

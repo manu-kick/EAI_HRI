@@ -1,14 +1,14 @@
 from flask import Flask, render_template
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
-import numpy as np
 
 from User import User
 
 import cv2
-import face_recognition
 import dlib
-
+import face_recognition
+import json
+import numpy as np
 
 app = Flask(__name__)
 # database connection details => https://freedb.tech/dashboard/index.php
@@ -151,29 +151,37 @@ def hello_world():
 
 
 # 1. /api/identify_user (starting from an image, the server runs an algorithm and identifies the user in the database, if the user is not present, it creates a new user in the database and returns the user's profile)
-@app.route('/api/identify_user')
+@app.route('/api/identify_user', methods=['GET', 'POST'])
 def identify_user():
     '''
     Given an image, run the algorithm to identify the user
     and return the user's profile
     '''
-    # Get the Post data -> from Gianmarco
-    # TODO
-    # image = request.files['image']
-    
-    image_path = "faces/WIN_20240415_18_41_06_Pro.jpg"
+    # Open the default camera (usually the webcam)
+    cap = cv2.VideoCapture(0)
 
+    # Check if the webcam is opened correctly
+    if not cap.isOpened():
+        raise Exception("Could not open video device!")
+
+    # Capture frame-by-frame
+    _, image = cap.read()
+
+    # Display the captured frame
+    # cv2.imshow('Webcam', frame)
+    
+    # Use a pre-computed image path
+    #image_path = "faces/emanuele_1.jpg"
+    #image = cv2.imread(image_path)
 
     # TODO Algorithm to identify the user --> Giancarlo
     # Call the inference of a model from a module (user identification) 
     #user_id = detect_user(image)
     
     det = Detector()
-    
-    image = cv2.imread(image_path)
     inference = det.detect_user(image)
-    #fix the error Python type numpy.int64 cannot be converted
-    inference = int(inference)
+
+    inference = int(inference) # Fixes: Python type numpy.int64 cannot be converted
 
     # Create an example user profile
     user_id = inference + 1 # Because the user_id starts from 1
@@ -193,8 +201,6 @@ def identify_user():
 
     return user.get_profile()
 
-
-
 # def detect_user(image):
 #     '''
 #     Given an image, detect the user, Run the algorithm to identify the user
@@ -209,7 +215,6 @@ def identify_user():
 
 #     return  user_id
 
-
 # 3. /api/get_game (the master knows which game to send to the user)
 @app.route('/api/get_game')
 def get_game():
@@ -219,7 +224,6 @@ def get_game():
 @app.route('/api/elaborate_mental_model')
 def elaborate_mental_model():
     return 'Elaborate Mental Model'
-
 
 # 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
 # @app.route('/serve_game/<game_name>')
@@ -279,6 +283,9 @@ def emit_pepper_feedback(game_name):
 #         'result': 'success'
 #     }
 
-
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    # Read the configuration file from JSON
+    with open('../config.json') as json_file:
+        config = json.load(json_file)
+
+    app.run(host=config['master_ip'], debug=True, port=5002)

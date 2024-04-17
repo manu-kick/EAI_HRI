@@ -38,19 +38,17 @@ def main(session):
 if __name__ == "__main__":
 
     # Read the configuration file from JSON
-    with open('config.json') as json_file:
+    with open('../config.json') as json_file:
         config = json.load(json_file)
-
-    print(config['port'])
 
     session = qi.Session()
 
     # Starting application
     try:
-        session.connect("tcp://{}:{}".format(config['ip'], config['port']))
-        print("Correctly connected to Pepper at " + config['ip'] + ":" + str(config['port']))
+        session.connect("tcp://{}:{}".format(config['pepper_ip'], config['pepper_port']))
+        print("Correctly connected to Pepper at " + config['pepper_ip'] + ":" + str(config['pepper_port']))
     except RuntimeError:
-        print("Can't connect to Naoqi at ip \"" + config['ip'] + "\" on port " + str(config['port']) +".\n"
+        print("Can't connect to Naoqi at ip \"" + config['pepper_ip'] + "\" on port " + str(config['pepper_port']) +".\n"
                 "Please check your script arguments. Run with -h option for help.")
         sys.exit(1)
 
