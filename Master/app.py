@@ -10,7 +10,6 @@ import face_recognition
 import json
 import numpy as np
 
-app = Flask(__name__)
 # database connection details => https://freedb.tech/dashboard/index.php
 # HOST: sql.freedb.tech
 # PORT: 3306
@@ -20,16 +19,12 @@ app = Flask(__name__)
 # Password: b$4HB$P7#$J#Sr!
 
 # Configure the MySQL connection
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://freedb_hri_user:b$4HB$P7#$J#Sr!@sql.freedb.tech/freedb_hri_database'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
-
-
-#Global variables accessible by all the functions
-user = None
-
 
 # Models for the database
 class UserModel(db.Model):
@@ -53,24 +48,6 @@ class SessionModel(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer)
     state = db.Column(db.String(255))
-
-#write the SQL to alter the column game_id in the session table and call it state
-# ALTER TABLE Sessions ADD COLUMN state VARCHAR(255) NOT NULL DEFAULT 'active';
-
-#Drop the column game_id
-# ALTER TABLE Sessions DROP COLUMN game_id;
-
-#make the id column of the Sessions table the primary key and autoincrement
-# ALTER TABLE Sessions MODIFY COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
-
-# remove user_id as foreign key
-# ALTER TABLE Sessions DROP FOREIGN KEY Sessions_ibfk_1;
-
-datFile =  "shape_predictor_68_face_landmarks.dat"
-
-# Initialize dlib's face detector (HOG-based) and the facial landmark predictor
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(datFile)
 
 class Detector:
     def __init__(self, ):
@@ -118,8 +95,28 @@ class Detector:
                 # return result
             
         return result
-        
-        
+
+# Global variables accessible by all the functions
+user = None
+dat_file =  "shape_predictor_68_face_landmarks.dat"
+
+# Initialize dlib's face detector (HOG-based) and the facial landmark predictor
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(dat_file)
+det = Detector()
+
+#write the SQL to alter the column game_id in the session table and call it state
+# ALTER TABLE Sessions ADD COLUMN state VARCHAR(255) NOT NULL DEFAULT 'active';
+
+#Drop the column game_id
+# ALTER TABLE Sessions DROP COLUMN game_id;
+
+#make the id column of the Sessions table the primary key and autoincrement
+# ALTER TABLE Sessions MODIFY COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
+
+# remove user_id as foreign key
+# ALTER TABLE Sessions DROP FOREIGN KEY Sessions_ibfk_1;
+
 @app.route('/')
 def hello_world():
     # Test connection to the database
@@ -166,22 +163,13 @@ def identify_user():
 
     # Capture frame-by-frame
     _, image = cap.read()
-
-    # Display the captured frame
-    # cv2.imshow('Webcam', frame)
     
     # Use a pre-computed image path
     #image_path = "faces/emanuele_1.jpg"
     #image = cv2.imread(image_path)
 
-    # TODO Algorithm to identify the user --> Giancarlo
-    # Call the inference of a model from a module (user identification) 
-    #user_id = detect_user(image)
-    
-    det = Detector()
-    inference = det.detect_user(image)
-
-    inference = int(inference) # Fixes: Python type numpy.int64 cannot be converted
+    # Algorithm to identify the user --> Giancarlo  
+    inference = int(det.detect_user(image)) # Fixes: Python type numpy.int64 cannot be converted
 
     # Create an example user profile
     user_id = inference + 1 # Because the user_id starts from 1

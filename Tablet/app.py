@@ -4,9 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 import json
 
-app = Flask(__name__)
-
 # Configure the MySQL connection
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://freedb_hri_user:b$4HB$P7#$J#Sr!@sql.freedb.tech/freedb_hri_database'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -67,17 +66,13 @@ class SessionModel(db.Model):
     user_id = db.Column(db.Integer)
     state = db.Column(db.String(255))
 
-
 #----------------------------------------------
 #----------------------------------------------
 #----------------------------------------------
-
-
 
 @app.route('/')
 def home():
     return render_template('index.html')
-
 
 @app.route('/api/get-session')
 def get_sessions():
@@ -91,7 +86,6 @@ def get_sessions():
         'user_id': return_session.user_id,
         'state': return_session.state
     }
-
 
 @app.post("/api/change_favorite_game/<user_id>")
 def change_favorite_game(user_id):
@@ -112,11 +106,6 @@ def change_favorite_game(user_id):
 
     return user.favorite_game
 
-
-
-    
-
-
 @app.get("/api/get-favorite-game/<user_id>")
 def get_favorite_game(user_id):
     # Query the user with the id 0
@@ -124,7 +113,6 @@ def get_favorite_game(user_id):
     return {
         'favorite_game': user.favorite_game
     }
-
 
 # 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
 @app.route('/serve_game/<game_name>/<user_id>')
@@ -140,9 +128,6 @@ def serve_game(game_name, user_id):
     else:
         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
         return render_template('/semanticpingpong.html', user=user.get_profile())
-
-    
-    
 
 # 8. /api/{game_name}/store_result (store the result of the game in the database)
 @app.route('/api/<game_name>/store_result',  methods=['POST'])
@@ -165,21 +150,6 @@ def store_result(game_name):
         'result': 'success'
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # SIMULATE THIS (THE FOLLOWING CODE) has to be placed in the pepper server
 @app.route("/api/change_session_status", methods=['POST'])
 def change_session_status():
@@ -196,12 +166,9 @@ def change_session_status():
     # call Emit feedback pepper
     # react_to_state(status)
 
-
     return {
         'result': 'success'
     }
-
-
 
 if __name__ == '__main__':
     # Read the configuration file from JSON

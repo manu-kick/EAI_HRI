@@ -11,12 +11,14 @@ import os
 import sys
 
 from User import User
+from pepper_utils import Pepper
 
 class SonarDetector(object):
     def __init__(self, services, config):
         super(SonarDetector, self).__init__()
         self.services = services
         self.config = config
+        self.pepper = Pepper(self.services, self.config)
 
         # Get the services ALMemory, ALMotion, ALTextToSpeech from self.services
         self.memory_service = self.services[0]
@@ -63,6 +65,9 @@ class SonarDetector(object):
         # In this case, we want to detect a person in front of the robot
         # If the sonar front value is smaller than the threshold, we greet the person
         if(sonar_front_value != 0.0) and (sonar_front_value < self.threshold and not self.greet):
+            # TODO
+            # self.pepper.change_eye_color(color="orange")
+            
             self.greet = True
             self.tts.say("Hello! Let me recognize you.")
 
