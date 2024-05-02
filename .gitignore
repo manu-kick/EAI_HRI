@@ -3,3 +3,7 @@
 
 # Ignore .pyc files
 *.pyc
+
+#ignore
+word2vec.gen
+word2vec.gen.vectors.npy

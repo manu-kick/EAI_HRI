@@ -27,11 +27,187 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
 <body>
-    <h1>Semantic ping Pong</h1>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1>Semantic ping Pong</h1>
+                <h2>Welcome {{user.name}}</h2>
+                <div class="spinner-border text-primary" role="status" id="loading">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <hr>
 
-    <button id="changeUserFavoriteGame" class="btn btn-warning">
-        Change favorite game to Tic Tac Toe
-    </button>
+            <div class="col-10 mb-4">
+                <input type="text" id="user_input" class="form-control" placeholder="Enter a word">
+            </div>
+            <div class="col-2 text-center">
+                <button id="send" class="btn btn-primary">Send</button>
+            </div>
+
+            <hr>
+
+            <div class="row">
+                <div class="col-6 text-center">
+                    <h2 class="mb-3">Pepper points</h2>
+                    <h2 class="pepper_points">0</h2>
+                </div>
+                <div class="col-6 text-center">
+                    <h2 class="mb-3">User points</h2>
+                    <h2 class="user_points">0</h2>
+                </div>
+            </div>
+            <div class="col-12 text-center">
+                <div class="row">
+                    <h1 id="current_word"> </h1>
+                </div>
+            </div>
+
+        </div>
+
+        <button id="changeUserFavoriteGame" class="btn btn-warning">
+            Change favorite game to Tic Tac Toe
+        </button>
+    </div>
+
+
+    <script>
+        var user_word = '';
+        var pepper_word = '';
+        //let's define an history of words
+        var words_history = [];
+
+        function getInitialWord(){
+            $.ajax({
+                url: '/api/get_initial_word',
+                type: 'GET',
+                contentType: 'application/json',
+                success: function(response) {
+                    pepper_word = response;
+                    words_history.push(pepper_word);
+
+                    $('#current_word').text(response);
+
+                    // TODO GIANMARCO send pepper the feedback to ask user to say a word
+                    // ajax call to send the feedback to the endpoint /api/send_feedback
+                    // ajaxAskForWord();
+                },
+                beforeSend: function(){
+                    $('#loading').show();
+                },
+                complete: function(){
+                    $('#loading').hide();
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        window.onload = function(){
+            //ajax call to get the initial word to the endpoiunt /api/get-initial-word
+           getInitialWord();    
+        }
+
+        function askForWord(){
+            //ajax call to get the initial word to the endpoiunt /api/get-initial-word
+            $.ajax({
+            
+            });
+        }
+
+        async function getWordFromPepper(word){
+            let response = await $.ajax({
+                url: '/api/emit_word/'+word,
+                type: 'POST',
+                contentType: 'application/json',
+                success: function(response) {
+                    $('#current_word').text(response);
+                    words_history.push(response);
+                },
+                complete: function(){
+                    $('#loading').hide();
+                },
+                error: function(error) {
+                    console.log(error);
+                }   
+            });
+
+            return response;
+        }
+
+        async function getPoints(previous_word, current_word, role) {
+            // role assume the value of 'user' or 'pepper'
+            var url = '/api/get_word_points/' + previous_word + '/' + current_word;
+            console.log(url);
+
+            try {
+                var response = await $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json'
+                });
+
+                //parse response in float
+                var word_points = parseFloat(response);
+                // make the points an integer
+                if (role == 'pepper') {
+                    //update the pepper points
+                    // take the current pepper points parse in float and add the new points * 100
+                    var pepper_points = parseFloat($('.pepper_points').text()) + (word_points * 100);
+                    pepper_points = pepper_points.toFixed(2);
+
+                    $('.pepper_points').text(pepper_points);
+                } else {
+                    //update the user points
+                    // take the current user points parse in float and add the new points * 100
+                    var user_points = parseFloat($('.user_points').text()) + (word_points * 100);
+                    user_points = user_points.toFixed(2);
+                    $('.user_points').text(user_points);
+
+                    //random delay from 1000 to 3000
+                    var delay = Math.floor(Math.random() * 3000) + 1000;
+                    $('#loading').show();
+
+                
+                    setTimeout(async function(){
+                        await getWordFromPepper(words_history[words_history.length - 1])
+                        getPoints(words_history[words_history.length - 2], words_history[words_history.length - 1], 'pepper');
+                    }, delay);
+                }
+            } catch (error) {
+                console.log(error);
+            } finally {
+                // $('#loading').hide();
+                $('#send').attr('disabled', false);
+            }
+        }
+
+
+        $('#send').click(function(){
+            user_word = $('#user_input').val();
+            if(user_word == ''){
+                alert ('Please enter a word');
+                return 
+            }
+
+            // check if the word is already in the history
+            if(words_history.includes(user_word)){
+                alert('This word has already been said');
+                return
+            }
+
+            // check if there are no spaces in the word
+            if(user_word.includes(' ')){
+                alert('The word cannot contain spaces');
+                return
+            }
+            
+            //add the word to the history
+            words_history.push(user_word);
+            getPoints(words_history[words_history.length - 2], words_history[words_history.length - 1], 'user');
+        });
+    </script>
 
 
     <script>

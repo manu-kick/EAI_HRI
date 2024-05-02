@@ -1,8 +1,11 @@
 from flask import Flask, render_template
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
-
+import gensim
+import gensim.downloader as api
+import random
 import json
+from gensim.models import KeyedVectors
 
 # Configure the MySQL connection
 app = Flask(__name__)
@@ -11,7 +14,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
-
+wv = None
 #----------------------------------------------
 #----------------------------------------------
 #----------------------------------------------
@@ -129,7 +132,7 @@ def serve_game(game_name, user_id):
         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
         return render_template('/semanticpingpong.html', user=user.get_profile())
 
-# 8. /api/{game_name}/store_result (store the result of the game in the database)
+# /api/{game_name}/store_result (store the result of the game in the database)
 @app.route('/api/<game_name>/store_result',  methods=['POST'])
 def store_result(game_name):
     # Get the Post data "type" and "user_id"
@@ -149,6 +152,71 @@ def store_result(game_name):
     return {
         'result': 'success'
     }
+
+
+# Semantic ping pong 
+@app.route("/api/get_initial_word", methods=['GET'])
+def get_intial_word():
+    # This function return the initial word for the semantic ping pong game
+    # It is a random word from a list of words
+    # Generate a list of words
+    words = []
+    words.append('apple')
+    words.append('banana')
+    words.append('cat')
+    words.append('dog')
+    words.append('elephant')
+    words.append('fish')
+    words.append('gorilla')
+
+    random_word = words[random.randint(0, len(words)-1)]
+    
+    return  random_word
+
+@app.route("/api/get_word_points/<previous_word>/<current_word>", methods=['POST'])
+def get_word_points(previous_word, current_word):
+    # 5 most similar words to the initial word
+    # similar_words = wv.most_similar(word, topn=5)
+
+    # cosine similarity 
+    similarity = wv.similarity(previous_word, current_word)
+    # make the similarity a number float
+    similarity = float(similarity)
+    return str(similarity)
+
+@app.route("/api/emit_word/<word>", methods=['POST'])
+def pepper_emit_word(word):
+    # get 10 most similar words to the word
+    similar_words = wv.most_similar(word, topn=10)
+
+    # Suppose we have mental model
+    mental_difficulty = 0
+
+    # Given the mental model of the user, the robot can choose the word to say (1 is expert than will return the most similar word)
+    # The robot can choose the word to say
+    if mental_difficulty == 1:
+        word_to_say = similar_words[4][0]
+    else:
+        word_to_say = similar_words[9][0]
+
+    print("From similar words: ", similar_words)
+    print("Word to say: ", word_to_say)
+    
+    return word_to_say
+
+
+
+                        #   // setTimeout(function(){
+                        # //     //empty the input
+                        # //     $('#user_input').val('');
+                        # //     getWordFromPepper(user_word);
+                        # //     console.log(words_history[words_history.length - 2], words_history[words_history.length - 1]);
+                        # //     getPoints(words_history[words_history.length - 2], words_history[words_history.length - 1], 'pepper');
+                        # // }, delay);        
+
+
+
+
 
 # SIMULATE THIS (THE FOLLOWING CODE) has to be placed in the pepper server
 @app.route("/api/change_session_status", methods=['POST'])
@@ -174,5 +242,11 @@ if __name__ == '__main__':
     # Read the configuration file from JSON
     with open('../config.json') as json_file:
         config = json.load(json_file)
+    
+    # wv = api.load('word2vec-google-news-300')
+    # wv.save(F'word2vec.gen')
+    
+    # Load the word2vec model
+    wv = gensim.models.KeyedVectors.load('word2vec.gen')
 
     app.run(host=config['master_ip'], debug=True, port=5001)

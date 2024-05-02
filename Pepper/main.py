@@ -18,6 +18,12 @@ def main(session):
         while not stop_condition:
             sonar_detector.check_person()
 
+            # "Per cambiare gioco usa il plsnate sul tablet.
+            # "Uso di default il gioco "Nome gioco" (prendi da user)
+
+            
+
+
             # If this is true, we have recognized the person
             # We shouldn't check anymore for check_person, but for check_closure
             # if we want to detect if the person is going away
@@ -28,6 +34,8 @@ def main(session):
                 # We should also check if the person is leaving or not
                 sonar_detector.check_closure()
                 stop_condition = True
+
+
 
             # Wait for 1 second before checking sensors again
             time.sleep(1.0)
