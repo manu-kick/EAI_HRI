@@ -103,7 +103,6 @@ dat_file =  "shape_predictor_68_face_landmarks.dat"
 # Initialize dlib's face detector (HOG-based) and the facial landmark predictor
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(dat_file)
-det = Detector()
 
 #write the SQL to alter the column game_id in the session table and call it state
 # ALTER TABLE Sessions ADD COLUMN state VARCHAR(255) NOT NULL DEFAULT 'active';
@@ -155,6 +154,7 @@ def identify_user():
     and return the user's profile
     '''
     # Open the default camera (usually the webcam)
+    det = Detector()
     cap = cv2.VideoCapture(0)
 
     # Check if the webcam is opened correctly
@@ -211,6 +211,8 @@ def get_game():
 # 4. /api/elaborate_mental_model (elaborate the mental model of the user setting a difficulty level based on the user's profile)
 @app.route('/api/elaborate_mental_model')
 def elaborate_mental_model():
+
+    
     return 'Elaborate Mental Model'
 
 # 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
