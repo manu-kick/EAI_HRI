@@ -16,12 +16,16 @@
             font-size: 16px;
             cursor: pointer;
         }
+
     </style>
     <!-- Boostrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <!-- Fa icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 
     <!-- Jquery -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -57,12 +61,15 @@
                     <h2 class="user_points">0</h2>
                 </div>
             </div>
+            <hr>
             <div class="col-12 text-center">
-                <div class="row">
-                    <h1 id="current_word"> </h1>
+                <div class="d-flex align-items-center justify-content-center" style="column-gap:10px;">
+                    <!--  FA Robot icon-->
+                    <i class="fas fa-robot fa-3x"></i>
+                    <h1 id="current_word" class="mb-0"> </h1>
                 </div>
             </div>
-
+            <!-- <img src="../pepper.jpg" alt="pepper" class="img-fluid"> -->
         </div>
 
         <button id="changeUserFavoriteGame" class="btn btn-warning">
@@ -139,8 +146,7 @@
         async function getPoints(previous_word, current_word, role) {
             // role assume the value of 'user' or 'pepper'
             var url = '/api/get_word_points/' + previous_word + '/' + current_word;
-            console.log(url);
-
+            
             try {
                 var response = await $.ajax({
                     url: url,
@@ -150,39 +156,122 @@
 
                 //parse response in float
                 var word_points = parseFloat(response);
-                // make the points an integer
-                if (role == 'pepper') {
-                    //update the pepper points
-                    // take the current pepper points parse in float and add the new points * 100
-                    var pepper_points = parseFloat($('.pepper_points').text()) + (word_points * 100);
-                    pepper_points = pepper_points.toFixed(2);
-
-                    $('.pepper_points').text(pepper_points);
-                } else {
-                    //update the user points
-                    // take the current user points parse in float and add the new points * 100
-                    var user_points = parseFloat($('.user_points').text()) + (word_points * 100);
-                    user_points = user_points.toFixed(2);
-                    $('.user_points').text(user_points);
-
-                    //random delay from 1000 to 3000
-                    var delay = Math.floor(Math.random() * 3000) + 1000;
-                    $('#loading').show();
-
+                // get the current points of the current role 
+                let current_points = parseFloat($('.'+role+'_points').text()) + (word_points * 100);                
+                if(role == 'pepper'){
+                    $('.pepper_points').text(current_points.toFixed(2));
+                }
+                else{
+                    $('.user_points').text(current_points.toFixed(2));
+                }
                 
-                    setTimeout(async function(){
-                        await getWordFromPepper(words_history[words_history.length - 1])
-                        getPoints(words_history[words_history.length - 2], words_history[words_history.length - 1], 'pepper');
-                    }, delay);
+                if(!checkWinner(current_points, role)){
+                    pointsAnimation(word_points, role);
+
+                    if(role == 'user'){
+                        //random delay from 1000 to 3000
+                        var delay = Math.floor(Math.random() * 3000) + 1000;
+                        $('#loading').show();
+
+                        setTimeout(async function(){
+                            await getWordFromPepper(words_history[words_history.length - 1])
+                            getPoints(words_history[words_history.length - 2], words_history[words_history.length - 1], 'pepper');
+                        }, delay);
+        
+                        //empty the input
+                        $('#user_input').val('');
+                    }
+                }
+                else{
+                    // we have a winner
+                    winnerAnimation(role);
+                    //lock send button
+                    $('#send').attr('disabled', true);
                 }
             } catch (error) {
-                console.log(error);
+                if(error.status == 500){
+                    alert('The word may not be in the dictionnary. Please try another');
+                    return;
+                }
             } finally {
                 // $('#loading').hide();
                 $('#send').attr('disabled', false);
             }
         }
 
+        function pointsAnimation(points, role){
+            //2 decimal points            
+            points = points.toFixed(2);
+            var pointsDiv = $('<div class="points "'+role+'>+'+points+'</div>');
+            if(role == 'pepper'){
+                pointsDiv.css('color', 'white');
+                //bg color
+                pointsDiv.css('background-color', 'rgba(255, 0, 0, 0.5)');
+            }
+            else{
+                pointsDiv.css('color', 'green');
+                //bg color
+                pointsDiv.css('background-color', 'rgba(0, 255, 0, 0.5)');
+
+            }
+            pointsDiv.css('position', 'absolute');
+            pointsDiv.css('border-radius', '80px');
+            pointsDiv.css('padding', '10px 20px');
+            pointsDiv.css('top', '50%');
+            pointsDiv.css('left', '50%');
+            pointsDiv.css('transform', 'translate(-50%, -50%)');
+            pointsDiv.css('font-size', '100px');
+            pointsDiv.css('font-weight', 'bold');
+            pointsDiv.css('z-index', '1000');
+            $('body').append(pointsDiv);
+
+            pointsDiv.animate({
+                top: '10%',
+                opacity: 0
+            }, 3000, function(){
+                pointsDiv.remove();
+            });
+        }
+        
+        function checkWinner(points, role){
+            if(points >= 100){
+                console.log(role + ' wins');
+                return true;
+            }
+            return false;
+        }
+
+        function winnerAnimation(role){
+            var winnerDiv = $('<div class="winner">Winner</div>');
+            if(role == 'pepper'){
+                winnerDiv.css('color', 'white');
+                //bg color
+                winnerDiv.css('background-color', 'rgba(255, 0, 0, 0.5)');
+            }
+            else{
+                winnerDiv.css('color', 'green');
+                //bg color
+                winnerDiv.css('background-color', 'rgba(0, 255, 0, 0.5)');
+
+            }
+            winnerDiv.css('position', 'absolute');
+            winnerDiv.css('border-radius', '80px');
+            winnerDiv.css('padding', '10px 20px');
+            winnerDiv.css('top', '50%');
+            winnerDiv.css('left', '50%');
+            winnerDiv.css('transform', 'translate(-50%, -50%)');
+            winnerDiv.css('font-size', '100px');
+            winnerDiv.css('font-weight', 'bold');
+            winnerDiv.css('z-index', '1000');
+            $('body').append(winnerDiv);
+
+            winnerDiv.animate({
+                top: '10%',
+                opacity: 0
+            }, 3000, function(){
+                winnerDiv.remove();
+            });
+        }
 
         $('#send').click(function(){
             user_word = $('#user_input').val();

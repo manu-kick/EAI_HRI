@@ -209,11 +209,44 @@ def get_game():
     return 'Get Game'
 
 # 4. /api/elaborate_mental_model (elaborate the mental model of the user setting a difficulty level based on the user's profile)
+def calculate_win_loss_ratio(user_id):
+    with app.app_context():  # Context for database access
+        wins = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='X').count()  # Assuming 'X' indicates a win
+
+        losses = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='O').count()  # Assuming 'O' indicates a loss
+
+        total_games = wins + losses 
+
+        if total_games == 0:
+            return 0.5  # Default ratio if no games played yet
+        else:
+            return wins / total_games
+        
+def calculate_difficulty(user_id):
+    with app.app_context():  # Context for database access
+        user = UserModel.query.get(user_id)
+        user_age = user.age
+        win_loss_ratio = calculate_win_loss_ratio(user_id)
+        
+        # YOUR MENTAL MODEL FORMULA HERE
+        difficulty_metric = user_age * (1 - win_loss_ratio)
+        easy_threshold = 25
+
+        # Threshold determination
+        if difficulty_metric <= easy_threshold:
+            difficulty_level = 0
+        else:
+            difficulty_level = 1
+
+        return difficulty_level
+
 @app.route('/api/elaborate_mental_model')
 def elaborate_mental_model():
+    # ... your user access logic ...
+    user_id = user.id 
+    difficulty_level = calculate_difficulty(user_id)
+    return {'difficulty': difficulty_level}
 
-    
-    return 'Elaborate Mental Model'
 
 # 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
 # @app.route('/serve_game/<game_name>')
