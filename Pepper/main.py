@@ -5,35 +5,58 @@ import qi
 import sys
 import time
 import json
+import requests
 
 from pepper_utils import PepperUtils
 
+pepper_endpoint = None
+
 def main(session):
-    stop_condition = False
+    count = 0
 
     # Main loop of Pepper.
     # We check if a person in front of the Robot and greet him/her
     try:
-        while not stop_condition:
-            pepper_utils.sonar_detector.check_person()        
+        while not pepper_utils.sonar_detector.greet:
+            pepper_utils.sonar_detector.check_person()
 
             # If this is true, we have recognized the person
             # We shouldn't check anymore for check_person, but for check_closure
             # if we want to detect if the person is going away
-            if pepper_utils.sonar_detector.greet:
-                print("Greet is True.")
-                pepper_utils.dance_engine.doHello()
-                pepper_utils.dance_engine.resetPosture()
+            while pepper_utils.sonar_detector.greet:
+                if(count == 0):
+                    print("Greet is True.")
+                    pepper_utils.dance_engine.doHello()
+                    pepper_utils.dance_engine.resetPosture()
+                    
+                    # Pepper should say only once:
+                    # "To change the game, use the button on the tablet"
+                    # "I will use the game "Game Name" (take from user)
+                    #
+                    # This should be done with an endpoint request to the API "/api/say/<word>"
+                    phrase = "To change the game, use the button on the tablet! I will use the game " + pepper_utils.sonar_detector.user.favorite_game
+                    url = pepper_endpoint + '/api/say/' + phrase
 
-                # "Per cambiare gioco usa il plsnate sul tablet.
-                # "Uso di default il gioco "Nome gioco" (prendi da user)
-                # Da far dire una sola volta
+                    # Sending GET request
+                    print("Sending GET request to the API for informing the user about the next steps..")
+                    response = requests.get(url)
 
+                    # Checking the response
+                    if response.status_code == 200:
+                        print("Request successful. Pepper successfully greeted and informed the user about the next steps of the interaction.")
+                    else:
+                        print("Error: ", response.status_code)
+                    count += 1
 
                 # We should also check if the person is leaving or not
-                pepper_utils.sonar_detector.check_closure()
-                stop_condition = True
+                if pepper_utils.sonar_detector.check_closure():
+                    pepper_utils.talk_engine.say("Hey " + pepper_utils.sonar_detector.user.name + ", I see you are leaving. Goodbye!", _async=True)
+                    pepper_utils.dance_engine.doHello()
+                    pepper_utils.dance_engine.resetPosture()
+                    count = 0
 
+                # Wait for 1 second before checking sensors again
+                time.sleep(1.0)
             # Wait for 1 second before checking sensors again
             time.sleep(1.0)
     except KeyboardInterrupt:
@@ -59,21 +82,27 @@ if __name__ == "__main__":
 
     # Set the needed services
     memory_service = session.service("ALMemory")
-    sonar_service = session.service("ALSonar")
     motion_service = session.service("ALMotion")
+    sonar_service = session.service("ALSonar")
     dialog_service = session.service("ALDialog")
     posture_service = session.service("ALRobotPosture")
     tts = session.service("ALTextToSpeech")
+    animation_service = session.service("ALAnimationPlayer")
 
     # Initialize the PepperUtils object
     pepper_utils = PepperUtils({
         'memory': memory_service,
-        'sonar': sonar_service,
         'motion': motion_service,
+        'sonar': sonar_service,
         'dialog': dialog_service,
         'posture': posture_service,
-        'tts': tts
+        'animation': animation_service,
+        'tts': tts,
+        'config': config,
+        'session': session
     })
+
+    pepper_endpoint = 'http://' + config['master_ip'] + ':5003'
 
     # Start the session
     main(session)

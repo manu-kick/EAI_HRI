@@ -26,7 +26,7 @@ class User:
     '''
         This is a local class that represents the User object, here can be implemented user-related methods
     '''
-    def __init__(self, name, surname, age, features, favorite_game = "tic tac toe", id = None):
+    def __init__(self, name, surname, age, features, favorite_game = "Tic Tac Toe", id = None):
 
         self.id = id
         self.name = name
@@ -107,10 +107,10 @@ def change_favorite_game(user_id):
     user_ = user
 
     # If the user has the favorite game tic tac toe, change it to semantic ping pong
-    if user_.favorite_game == 'tic tac toe':
-        user_.favorite_game = 'semantic ping pong'
+    if user_.favorite_game == 'Tic Tac Toe':
+        user_.favorite_game = 'Semantic Ping Pong'
     else:
-        user_.favorite_game = 'tic tac toe'
+        user_.favorite_game = 'Tic Tac Toe'
 
     # Update the user in the database
     user = UserModel.query.filter_by(id=user_id).first()

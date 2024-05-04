@@ -20,8 +20,8 @@ class TalkEngine(object):
         self.tts = self.services['tts']
         self.config = self.services['config']
 
-    def say(self, text):
-        self.tts.say(text)
+    def say(self, text, _async=False):
+        self.tts.say(text, _async=_async)
         return
 
 class DanceEngine(object):
@@ -127,11 +127,9 @@ class SonarEngine(object):
 
         if self.greet and ((sonar_front_value == 0.0) or (sonar_front_value > self.threshold)):
             self.greet = False
-            self.talk_engine.say("Hey " + self.user.name + ", I see you are leaving. Goodbye!")
-        
-        if self.greet and ((sonar_back_value == 0.0) or (sonar_back_value > self.threshold)):
-            self.greet = False
-            self.talk_engine.say("Hey " + self.user.name + ", I see you are leaving. Goodbye!")
+            return True
+        else:
+            return False
 
     """
     Get the sonar value from the front sonar sensor.
@@ -153,10 +151,7 @@ class SonarEngine(object):
 
         # In this case, we want to detect a person in front of the robot
         # If the sonar front value is smaller than the threshold, we greet the person
-        if(sonar_front_value != 0.0) and (sonar_front_value < self.threshold and not self.greet):
-            # TODO
-            # self.pepper.change_eye_color(color="orange")
-            
+        if (sonar_front_value != 0.0) and (sonar_front_value < self.threshold and not self.greet):
             self.greet = True
             self.talk_engine.say("Hello! Let me recognize you.", _async=True)
             self.dance_engine.doHello()
@@ -179,8 +174,6 @@ class SonarEngine(object):
                 print("Error: ", response.status_code)
             
             self.talk_engine.say("Nice to meet you " + self.user.name + "! I am Pepper.")
-            time.sleep(2.0)
-
         elif(sonar_back_value != 0.0) and (sonar_back_value < self.threshold) and not self.greet:
             self.talk_engine.say("Hey! I see you're behind me! Please come in front of me, so I can recognize you.")
         else:

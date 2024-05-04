@@ -203,9 +203,9 @@ def identify_user():
     # Capture frame-by-frame
     _, image = cap.read()
     
-    # Use a pre-computed image path
-    image_path = "faces/emanuele_1.jpg"
-    image = cv2.imread(image_path)
+    # # Use a pre-computed image path
+    # image_path = "faces/emanuele_1.jpg"
+    # image = cv2.imread(image_path)
 
     # Algorithm to identify the user --> Giancarlo  
     inference = int(det.detect_user(image)) # Fixes: Python type numpy.int64 cannot be converted
@@ -214,9 +214,9 @@ def identify_user():
     user_id = inference + 1 # Because the user_id starts from 1
     user = UserModel.query.filter_by(id=user_id).first()
     user_features = user.user_features.decode('utf-8')
-    user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id) # TODO Make the user_id dynamic
+    user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id)
 
-    if user.favorite_game == 'tic_tac_toe':
+    if user.favorite_game == 'Tic Tac Toe':
         state_session = 0
     else:
         state_session = 20
@@ -251,7 +251,7 @@ def elaborate_mental_model():
 #     user_id = 0
 #     # Get the profile of the user with user_id from the database
 
-#     user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'tic_tac_toe', id = user_id)
+#     user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'Tic Tac Toe', id = user_id)
 
 
 #     #TODO Suppose here to send message to 

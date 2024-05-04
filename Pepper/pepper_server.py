@@ -30,7 +30,7 @@ class User:
     '''
         This is a local class that represents the User object, here can be implemented user-related methods
     '''
-    def __init__(self, name, surname, age, features, favorite_game = "tic tac toe", id = None):
+    def __init__(self, name, surname, age, features, favorite_game = "Tic Tac Toe", id = None):
 
         self.id = id
         self.name = name
