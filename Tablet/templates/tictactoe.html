@@ -102,8 +102,6 @@
     <button class="reset-btn btn btn-primary" onclick="resetGame()">New Game</button>
 
     <script>
-        var pepper_base_endpoint = ""
-
         let currentPlayer = 'X';
         let gameBoard = [
             ['', '', ''],
@@ -113,6 +111,7 @@
         let gameOver = false;
         let pointsX = 0;
         let pointsO = 0;
+        var endpoint_pepper = 'http://' + window.location.hostname + ':5003';
 
         function checkWin() {
             for (let i = 0; i < 3; i++) {
@@ -174,24 +173,29 @@
                     updateMessage(currentPlayer + ' wins!');
                     if (currentPlayer === 'X') {
                         pointsX++;
+                        pepperSpeak('You won the game! Congratulations!');
+                        pepperMove('lose');
                     } else {
                         pointsO++;
+                        pepperSpeak('I won the game! Better luck next time!');
+                        pepperMove('win');
                     }
                     updatePoints();
                     gameOver = true;
-                    send_result(currentPlayer);
+                    sendResult(currentPlayer);
                 } else if (checkDraw()) {
                     updateMessage('It\'s a draw!');
-                    send_result('draw');
+                    sendResult('draw');
                     gameOver = true;
+                    pepperSpeak('It\'s a draw! Good game!');
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                     
                     //if the current player is X change the status of the session to 1 that means that the robot should give a feedbak to the user
                     if(currentPlayer === 'X'){
-                      changeStatus(1, `{{user.id}}`);
-                    }else{
-                    changeStatus(0, `{{user.id}}`);
+                        changeStatus(1, `{{user.id}}`);
+                    } else {
+                        changeStatus(0, `{{user.id}}`);
                     }
 
                     updateMessage('Player ' + currentPlayer + '\'s turn');
@@ -201,6 +205,7 @@
                         let randomTimeout = Math.floor(Math.random() * 4000) + 1000; // Random time between 1 to 5 seconds
                         setTimeout(function() {
                             autoMove();
+                            pepperSpeak('Your turn now!');
                         }, randomTimeout);
                     }
                 }
@@ -242,7 +247,7 @@
             }
         }
 
-        function send_result(type){
+        function sendResult(type){
             // ajax call to 127.0.0.1:5000/api/tic_tac_toe/store_result
             console.log('sending result... type:', type);
             $.ajax({
@@ -267,6 +272,41 @@
             });
         }
 
+        function pepperSpeak(word){
+            //ajax call to get the initial word to the endpoint /api/say/<word>
+            $.ajax({
+                url: endpoint_pepper + '/api/say/' + word,
+                type: 'GET',
+                headers: {
+                    'Content-Type':'application/json',
+                },
+                success: function(response) {
+                    console.log('Pepper spoke successfully');
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function pepperMove(move){
+            //ajax call to get the initial word to the endpoiunt /api/move/<move>
+            $.ajax({
+                url: endpoint_pepper + '/api/move/' + move,
+                type: 'GET',
+                headers: {
+                    'Content-Type':'application/json',
+                },
+                success: function(response) {
+                    console.log('Pepper moved successfully.');
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
 
         $('#changeUserFavoriteGame').click(function(){
             var url = '/api/change_favorite_game/'+`{{user.id}}`;

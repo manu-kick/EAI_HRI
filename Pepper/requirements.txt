@@ -1,8 +1,6 @@
+requests
 Flask
 Flask-SQLAlchemy
-flask_cors
+flask_cors==3.0.10
 mysql-connector-python
 numpy
-
-gensim
-requests

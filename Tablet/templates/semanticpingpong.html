@@ -77,8 +77,22 @@
         </button>
     </div>
 
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+            <!-- <img src="..." class="rounded me-2" alt="..."> -->
+            <strong class="me-auto">Bootstrap</strong>
+            <small>11 mins ago</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Saved the winning of the match!
+            </div>
+        </div>
+    </div>
 
     <script>
+        var endpoint_pepper = 'http://' + window.location.hostname + ':5003';
         var user_word = '';
         var pepper_word = '';
         //let's define an history of words
@@ -97,13 +111,18 @@
 
                     // TODO GIANMARCO send pepper the feedback to ask user to say a word
                     // ajax call to send the feedback to the endpoint /api/send_feedback
-                    // ajaxAskForWord();
+                    pepperSpeak("Welcome to the game. I will choose the first word to start the game, then it will be your turn to say the next word. Let's start!");
+
+                    // Timeout 5 sec
+                    setTimeout(function(){
+                        pepperSpeak("My word is: " + response + ". Now it's your turn! Say a word!");
+                    }, 2000);
                 },
                 beforeSend: function(){
                     $('#loading').show();
                 },
                 complete: function(){
-                    $('#loading').hide();
+                    $('#loading').hide();                   
                 },
                 error: function(error) {
                     console.log(error);
@@ -112,14 +131,42 @@
         }
 
         window.onload = function(){
-            //ajax call to get the initial word to the endpoiunt /api/get-initial-word
-           getInitialWord();    
+            getInitialWord(); //ajax call to get the initial word to the endpoint /api/get-initial-word
         }
 
-        function askForWord(){
-            //ajax call to get the initial word to the endpoiunt /api/get-initial-word
+        function pepperSpeak(word){
+            //ajax call to get the initial word to the endpoint /api/say/<word>
             $.ajax({
-            
+                url: endpoint_pepper + '/api/say/' + word,
+                type: 'GET',
+                headers: {
+                    'Content-Type':'application/json',
+                },
+                success: function(response) {
+                    console.log('Pepper spoke successfully');
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function pepperMove(move){
+            //ajax call to get the initial word to the endpoiunt /api/move/<move>
+            $.ajax({
+                url: endpoint_pepper + '/api/move/' + move,
+                type: 'GET',
+                headers: {
+                    'Content-Type':'application/json',
+                },
+                success: function(response) {
+                    console.log('Pepper moved successfully.');
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
             });
         }
 
@@ -129,8 +176,16 @@
                 type: 'POST',
                 contentType: 'application/json',
                 success: function(response) {
+                    pepperSpeak("My word is: " + response + "."); // Let Pepper say the word chosen
                     $('#current_word').text(response);
                     words_history.push(response);
+
+                    // Timeout 5 sec + pepper speak only if the game is not finished
+                    if (!checkWinner(parseFloat($('.pepper_points').text()), 'pepper')){
+                        setTimeout(function(){
+                            pepperSpeak("Your turn to say a word!");
+                        }, 3000);
+                    }
                 },
                 complete: function(){
                     $('#loading').hide();
@@ -164,13 +219,12 @@
                 else{
                     $('.user_points').text(current_points.toFixed(2));
                 }
-                
                 if(!checkWinner(current_points, role)){
                     pointsAnimation(word_points, role);
 
                     if(role == 'user'){
                         //random delay from 1000 to 3000
-                        var delay = Math.floor(Math.random() * 3000) + 1000;
+                        var delay = 3000
                         $('#loading').show();
 
                         setTimeout(async function(){
@@ -197,6 +251,35 @@
                 // $('#loading').hide();
                 $('#send').attr('disabled', false);
             }
+        }
+
+        function sendResult(type){
+            // ajax call to /api/semantic_ping_pong/store_result
+            if(type == 'pepper') {
+                type = 'O';
+            } else {
+                type = 'X';
+            }
+            console.log('sending result... type:', type);
+            $.ajax({
+                url: '/api/semantic_ping_pong/store_result',
+                type: 'POST',
+                data: JSON.stringify({
+                    type: type, 
+                    user_id: `{{user.id}}`
+                }),
+                contentType: 'application/json',
+                success: function(response) {
+                    const toastLiveExample = document.getElementById('liveToast')
+
+                    const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastLiveExample)
+                  
+                    toastBootstrap.show()
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
         }
 
         function pointsAnimation(points, role){
@@ -236,6 +319,17 @@
         function checkWinner(points, role){
             if(points >= 100){
                 console.log(role + ' wins');
+                // ajax call to api/semantic_ping_pong/store_result
+                sendResult(role);
+
+                if(role == 'pepper'){
+                    pepperSpeak('I won! Try better next time!');
+                    pepperMove("win") // Let Pepper move to the win position
+                } else {
+                    pepperSpeak('You won! Congratulations!');
+                    pepperMove("lose") // Let Pepper move to the lose position
+                }
+
                 return true;
             }
             return false;

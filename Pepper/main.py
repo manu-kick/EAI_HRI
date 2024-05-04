@@ -1,13 +1,12 @@
 """
     Main Loop for Pepper
 """
-
 import qi
 import sys
 import time
 import json
 
-from sonar import SonarDetector
+from pepper_utils import PepperUtils
 
 def main(session):
     stop_condition = False
@@ -16,26 +15,24 @@ def main(session):
     # We check if a person in front of the Robot and greet him/her
     try:
         while not stop_condition:
-            sonar_detector.check_person()
-
-            # "Per cambiare gioco usa il plsnate sul tablet.
-            # "Uso di default il gioco "Nome gioco" (prendi da user)
-
-            
-
+            pepper_utils.sonar_detector.check_person()        
 
             # If this is true, we have recognized the person
             # We shouldn't check anymore for check_person, but for check_closure
             # if we want to detect if the person is going away
-            if sonar_detector.greet:
+            if pepper_utils.sonar_detector.greet:
                 print("Greet is True.")
+                pepper_utils.dance_engine.doHello()
+                pepper_utils.dance_engine.resetPosture()
 
-                # After identifying the person, we should start asking about the game, start the game and interact with the person
+                # "Per cambiare gioco usa il plsnate sul tablet.
+                # "Uso di default il gioco "Nome gioco" (prendi da user)
+                # Da far dire una sola volta
+
+
                 # We should also check if the person is leaving or not
-                sonar_detector.check_closure()
+                pepper_utils.sonar_detector.check_closure()
                 stop_condition = True
-
-
 
             # Wait for 1 second before checking sensors again
             time.sleep(1.0)
@@ -65,10 +62,18 @@ if __name__ == "__main__":
     sonar_service = session.service("ALSonar")
     motion_service = session.service("ALMotion")
     dialog_service = session.service("ALDialog")
+    posture_service = session.service("ALRobotPosture")
     tts = session.service("ALTextToSpeech")
 
-    # SonarDetector
-    sonar_detector = SonarDetector((memory_service, sonar_service, tts), config)
+    # Initialize the PepperUtils object
+    pepper_utils = PepperUtils({
+        'memory': memory_service,
+        'sonar': sonar_service,
+        'motion': motion_service,
+        'dialog': dialog_service,
+        'posture': posture_service,
+        'tts': tts
+    })
 
     # Start the session
     main(session)

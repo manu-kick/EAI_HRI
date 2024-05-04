@@ -1,5 +1,4 @@
-from flask import Flask, render_template
-from flask import request
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from User import User
@@ -75,7 +74,15 @@ class Detector:
         users_features = np.array(users_features)
         
         return users_features
-    
+
+    #     '''
+    #     Given an image, detect the user, Run the algorithm to identify the user
+    #     1. Extract features from the image
+    #     2. Take the features of all the users from the database
+    #     3. Compare the features of the image with the features of the users
+    #     4. Return the user_id of the user that matches the most with the image
+    #     5. If the user is not present, create a new user in the database and return the user_id
+    #     '''
     def detect_user(self, image):
         '''
         image: image of the user 
@@ -95,6 +102,37 @@ class Detector:
                 # return result
             
         return result
+
+def calculate_win_loss_ratio(user_id):
+    with app.app_context():  # Context for database access
+        wins = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='X').count()  # Assuming 'X' indicates a win
+
+        losses = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='O').count()  # Assuming 'O' indicates a loss
+
+        total_games = wins + losses 
+
+        if total_games == 0:
+            return 0.5  # Default ratio if no games played yet
+        else:
+            return wins / total_games
+        
+def calculate_difficulty(user_id):
+    with app.app_context():  # Context for database access
+        user = UserModel.query.get(user_id)
+        user_age = user.age
+        win_loss_ratio = calculate_win_loss_ratio(user_id)
+        
+        # YOUR MENTAL MODEL FORMULA HERE
+        difficulty_metric = user_age * (1 - win_loss_ratio)
+        easy_threshold = 25
+
+        # Threshold determination
+        if difficulty_metric <= easy_threshold:
+            difficulty_level = 0
+        else:
+            difficulty_level = 1
+
+        return difficulty_level
 
 # Global variables accessible by all the functions
 user = None
@@ -145,7 +183,6 @@ def hello_world():
     # Take the array of users and return it as a json object
     return {'users': users}
 
-
 # 1. /api/identify_user (starting from an image, the server runs an algorithm and identifies the user in the database, if the user is not present, it creates a new user in the database and returns the user's profile)
 @app.route('/api/identify_user', methods=['GET', 'POST'])
 def identify_user():
@@ -153,8 +190,10 @@ def identify_user():
     Given an image, run the algorithm to identify the user
     and return the user's profile
     '''
-    # Open the default camera (usually the webcam)
+    # Initialize the detector
     det = Detector()
+
+    # Open the default camera (usually the webcam)
     cap = cv2.VideoCapture(0)
 
     # Check if the webcam is opened correctly
@@ -165,8 +204,8 @@ def identify_user():
     _, image = cap.read()
     
     # Use a pre-computed image path
-    #image_path = "faces/emanuele_1.jpg"
-    #image = cv2.imread(image_path)
+    image_path = "faces/emanuele_1.jpg"
+    image = cv2.imread(image_path)
 
     # Algorithm to identify the user --> Giancarlo  
     inference = int(det.detect_user(image)) # Fixes: Python type numpy.int64 cannot be converted
@@ -189,66 +228,21 @@ def identify_user():
 
     return user.get_profile()
 
-# def detect_user(image):
-#     '''
-#     Given an image, detect the user, Run the algorithm to identify the user
-#     1. Extract features from the image
-#     2. Take the features of all the users from the database
-#     3. Compare the features of the image with the features of the users
-#     4. Return the user_id of the user that matches the most with the image
-#     5. If the user is not present, create a new user in the database and return the user_id
-#     '''
-#     # TODO
-#     user_id = 0
-
-#     return  user_id
-
-# 3. /api/get_game (the master knows which game to send to the user)
+# 2. /api/get_game (the master knows which game to send to the user)
 @app.route('/api/get_game')
 def get_game():
     return 'Get Game'
 
-# 4. /api/elaborate_mental_model (elaborate the mental model of the user setting a difficulty level based on the user's profile)
-def calculate_win_loss_ratio(user_id):
-    with app.app_context():  # Context for database access
-        wins = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='X').count()  # Assuming 'X' indicates a win
-
-        losses = db.session.query(TicTacToeModel).filter_by(user_id=user_id, outcome='O').count()  # Assuming 'O' indicates a loss
-
-        total_games = wins + losses 
-
-        if total_games == 0:
-            return 0.5  # Default ratio if no games played yet
-        else:
-            return wins / total_games
-        
-def calculate_difficulty(user_id):
-    with app.app_context():  # Context for database access
-        user = UserModel.query.get(user_id)
-        user_age = user.age
-        win_loss_ratio = calculate_win_loss_ratio(user_id)
-        
-        # YOUR MENTAL MODEL FORMULA HERE
-        difficulty_metric = user_age * (1 - win_loss_ratio)
-        easy_threshold = 25
-
-        # Threshold determination
-        if difficulty_metric <= easy_threshold:
-            difficulty_level = 0
-        else:
-            difficulty_level = 1
-
-        return difficulty_level
-
+# 3. /api/elaborate_mental_model (elaborate the mental model of the user setting a difficulty level based on the user's profile)
 @app.route('/api/elaborate_mental_model')
 def elaborate_mental_model():
-    # ... your user access logic ...
-    user_id = user.id 
-    difficulty_level = calculate_difficulty(user_id)
+    # Retrieve the last user session
+    last_session = SessionModel.query.order_by(SessionModel.id.desc()).first()
+
+    difficulty_level = calculate_difficulty(last_session.user_id)
     return {'difficulty': difficulty_level}
 
-
-# 5. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
+# 4. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
 # @app.route('/serve_game/<game_name>')
 # def serve_game(game_name):
 #     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
@@ -271,7 +265,7 @@ def elaborate_mental_model():
 #         return "Serve semantic ping pong game"
         
 
-# 6. /api/{game_name}/ask_user_feedback (receive the feedback from the user and store it in the database)
+# 5. /api/{game_name}/ask_user_feedback (receive the feedback from the user and store it in the database)
 @app.route('/api/<game_name>/ask_user_feedback')
 def ask_user_feedback(game_name):
     '''
@@ -279,32 +273,10 @@ def ask_user_feedback(game_name):
     '''
     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
 
-
-# 7. api/{game_name}/emit_pepper_feedback (send the feedback to the Pepper robot)
+# 6. api/{game_name}/emit_pepper_feedback (send the feedback to the Pepper robot)
 @app.route('/api/<game_name>/emit_pepper_feedback')
 def emit_pepper_feedback(game_name):
     return 'Emit Pepper Feedback ' + game_name
-
-# 8. /api/{game_name}/store_result (store the result of the game in the database)
-# @app.route('/api/<game_name>/store_result',  methods=['POST'])
-# def store_result(game_name):
-#     # Get the Post data "type" and "user_id"
-#     data = request.json
-#     if game_name == 'tic_tac_toe':
-#         type_ = data['type']
-#         user_id = data['user_id']
-
-#         # Store the result in the database in the table TicTacToe
-#         new_result = TicTacToeModel(user_id=user_id, outcome=type_)
-#         db.session.add(new_result)
-#         db.session.commit()
-#     else:
-#         # TO implement the semantic ping pong
-#         raise NotImplementedError
-
-#     return {
-#         'result': 'success'
-#     }
 
 if __name__ == '__main__':
     # Read the configuration file from JSON
