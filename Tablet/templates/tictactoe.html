@@ -102,6 +102,9 @@
     <button class="reset-btn btn btn-primary" onclick="resetGame()">New Game</button>
 
     <script>
+        window.onload = function() {
+            pepperSpeak("Welcome to the game. I am the circle (O) and you are the cross (X). As soon as you make your first move, I will make mine. Good luck!");
+        };
         let currentPlayer = 'X';
         let gameBoard = [
             ['', '', ''],
@@ -188,6 +191,7 @@
                     sendResult('draw');
                     gameOver = true;
                     pepperSpeak('It\'s a draw! Good game!');
+                    pepperMove('draw');
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                     
@@ -290,6 +294,24 @@
             });
         }
 
+        function pepperSpeak(word){
+            //ajax call to get the initial word to the endpoint /api/say/<word>
+            $.ajax({
+                url: endpoint_pepper + '/api/say/' + word,
+                type: 'GET',
+                headers: {
+                    'Content-Type':'application/json',
+                },
+                success: function(response) {
+                    console.log('Pepper spoke successfully');
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
         function pepperMove(move){
             //ajax call to get the initial word to the endpoiunt /api/move/<move>
             $.ajax({
@@ -316,11 +338,12 @@
                 contentType: 'application/json',
                 success: function(response) {
                     // redirect to the correct game page
-                    if(response == "semantic ping pong"){
+                    if(response == "Semantic Ping Pong"){
                         changeStatus(20, `{{user.id}}`);
                         window.location.href = '/serve_game/semantic_ping_pong/'+`{{user.id}}`;   
                     }
                     else{
+                        console.log('response:', response);
                         changeStatus(0, `{{user.id}}`);
                         window.location.href = '/serve_game/tic_tac_toe/'+`{{user.id}}`;
                     }

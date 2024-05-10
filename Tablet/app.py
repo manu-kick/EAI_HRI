@@ -2,12 +2,14 @@ from flask import Flask, render_template
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
 
+import os
 import gensim
 import gensim.downloader as api
 import random
 import json
 import requests
 
+# ==========================================
 # Configure the MySQL connection
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://freedb_hri_user:b$4HB$P7#$J#Sr!@sql.freedb.tech/freedb_hri_database'
@@ -16,10 +18,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the database
 db = SQLAlchemy(app)
 wv = None
-
-#----------------------------------------------
-#----------------------------------------------
-#----------------------------------------------
+# ==========================================
 
 # Class of the User object
 class User:
@@ -77,10 +76,9 @@ class SessionModel(db.Model):
     user_id = db.Column(db.Integer)
     state = db.Column(db.String(255))
 
-#----------------------------------------------
-#----------------------------------------------
-#----------------------------------------------
+# ==========================================
 
+# 0. / (home page)
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -232,10 +230,10 @@ if __name__ == '__main__':
         config = json.load(json_file)
     
     # # To be run only once to download the word2vec model.
-    # wv = api.load('word2vec-google-news-300')
-    # wv.save(F'word2vec.gen')
-    
-    # Load the word2vec model
-    wv = gensim.models.KeyedVectors.load('word2vec.gen')
+    if(os.path.exists('word2vec.gen')):
+        wv = gensim.models.KeyedVectors.load('word2vec.gen')
+    else:
+        wv = api.load('word2vec-google-news-300')
+        wv.save(F'word2vec.gen')
 
     app.run(host=config['master_ip'], debug=True, port=5001)

@@ -75,10 +75,9 @@ class SessionModel(db.Model):
     user_id = db.Column(db.Integer)
     state = db.Column(db.String(255))
 
-#----------------------------------------------
-#----------------------------------------------
-#----------------------------------------------
+# ==========================================
 
+# 0. / (home page) for testing purposes
 @app.route('/')
 def home():
     pepper_utils.talk_engine.say("Hello World!")
@@ -86,11 +85,13 @@ def home():
     pepper_utils.dance_engine.resetPosture()
     return make_response()
 
+# 1. /api/say/<word> (GET) to make Pepper say a word
 @app.route("/api/say/<word>", methods=['GET'])
 def say_word(word):
     pepper_utils.talk_engine.say(word)
     return make_response()
 
+# 2. /api/move/<movement> (GET) to make Pepper move
 @app.route("/api/move/<movement>", methods=['GET'])
 def move(movement):
     # Move the robot
@@ -100,7 +101,9 @@ def move(movement):
         pepper_utils.dance_engine.doPop()
     elif movement == "lose":
         pepper_utils.dance_engine.doLose()
-    else:
+    elif movement == "draw":
+        pepper_utils.dance_engine.doDraw()
+    else: # Hello
         pepper_utils.dance_engine.doHello()
 
     print("Resetting posture...")

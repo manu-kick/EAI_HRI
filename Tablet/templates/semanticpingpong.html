@@ -34,7 +34,7 @@
     <div class="container">
         <div class="row">
             <div class="col-12 text-center">
-                <h1>Semantic ping Pong</h1>
+                <h1>Semantic Ping Pong</h1>
                 <h2>Welcome {{user.name}}</h2>
                 <div class="spinner-border text-primary" role="status" id="loading">
                     <span class="visually-hidden">Loading...</span>
@@ -179,13 +179,6 @@
                     pepperSpeak("My word is: " + response + "."); // Let Pepper say the word chosen
                     $('#current_word').text(response);
                     words_history.push(response);
-
-                    // Timeout 5 sec + pepper speak only if the game is not finished
-                    if (!checkWinner(parseFloat($('.pepper_points').text()), 'pepper')){
-                        setTimeout(function(){
-                            pepperSpeak("Your turn to say a word!");
-                        }, 3000);
-                    }
                 },
                 complete: function(){
                     $('#loading').hide();
@@ -212,7 +205,7 @@
                 //parse response in float
                 var word_points = parseFloat(response);
                 // get the current points of the current role 
-                let current_points = parseFloat($('.'+role+'_points').text()) + (word_points * 100);                
+                let current_points = parseFloat($('.'+role+'_points').text()) + (word_points * 100);
                 if(role == 'pepper'){
                     $('.pepper_points').text(current_points.toFixed(2));
                 }
@@ -222,9 +215,9 @@
                 if(!checkWinner(current_points, role)){
                     pointsAnimation(word_points, role);
 
-                    if(role == 'user'){
+                    if (role == 'user') {
                         //random delay from 1000 to 3000
-                        var delay = 3000
+                        var delay = 500
                         $('#loading').show();
 
                         setTimeout(async function(){
@@ -234,22 +227,20 @@
         
                         //empty the input
                         $('#user_input').val('');
+                    } else {
+                        pepperSpeak("Your turn to say a word!");
+                        $('#send').attr('disabled', false);
                     }
                 }
                 else{
                     // we have a winner
                     winnerAnimation(role);
-                    //lock send button
-                    $('#send').attr('disabled', true);
                 }
             } catch (error) {
                 if(error.status == 500){
                     alert('The word may not be in the dictionnary. Please try another');
                     return;
                 }
-            } finally {
-                // $('#loading').hide();
-                $('#send').attr('disabled', false);
             }
         }
 
@@ -368,7 +359,12 @@
         }
 
         $('#send').click(function(){
+            // Disable send button
+            $('#send').attr('disabled', true);
+
             user_word = $('#user_input').val();
+            user_word = user_word.toLowerCase();
+
             if(user_word == ''){
                 alert ('Please enter a word');
                 return 
@@ -422,7 +418,7 @@
                 contentType: 'application/json',
                 success: function(response) {
                     // redirect to the correct game page
-                    if(response == "semantic ping pong"){
+                    if(response == "Semantic Ping Pong"){
                         changeStatus(20, `{{user.id}}`);
                         window.location.href = '/serve_game/semantic_ping_pong/'+`{{user.id}}`;   
                     }

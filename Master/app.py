@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 
 from User import User
@@ -9,13 +9,15 @@ import face_recognition
 import json
 import numpy as np
 
+# ========================
 # database connection details => https://freedb.tech/dashboard/index.php
 # HOST: sql.freedb.tech
 # PORT: 3306
 # DATABASE NAME: freedb_hri_database
-
+# ========================
 # USER: freedb_hri_user
 # Password: b$4HB$P7#$J#Sr!
+# ========================
 
 # Configure the MySQL connection
 app = Flask(__name__)
@@ -134,43 +136,32 @@ def calculate_difficulty(user_id):
 
         return difficulty_level
 
+def initialize_webcam() -> cv2.VideoCapture:
+    cap = cv2.VideoCapture(0)
+
+    # Check if the webcam is opened correctly
+    if not cap.isOpened():
+        raise Exception("Could not open video device!")
+    else:
+        print("Webcam ready")
+        return cap
+
 # Global variables accessible by all the functions
 user = None
-dat_file =  "shape_predictor_68_face_landmarks.dat"
+dat_file = "shape_predictor_68_face_landmarks.dat"
 
 # Initialize dlib's face detector (HOG-based) and the facial landmark predictor
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(dat_file)
 
-#write the SQL to alter the column game_id in the session table and call it state
-# ALTER TABLE Sessions ADD COLUMN state VARCHAR(255) NOT NULL DEFAULT 'active';
-
-#Drop the column game_id
-# ALTER TABLE Sessions DROP COLUMN game_id;
-
-#make the id column of the Sessions table the primary key and autoincrement
-# ALTER TABLE Sessions MODIFY COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
-
-# remove user_id as foreign key
-# ALTER TABLE Sessions DROP FOREIGN KEY Sessions_ibfk_1;
+# Initialize the webcam
+cap = initialize_webcam()
 
 @app.route('/')
 def hello_world():
     # Test connection to the database
     # Query all users
     all_users = UserModel.query.all()
-
-    # # Query users based on a condition
-    # specific_users = UserModel.query.filter_by(name='John').all()
-
-    # # Query users based on multiple conditions
-    # specific_users = UserModel.query.filter_by(name='John', surname='Doe').all()
-
-    # # Query users based on a condition and retrieve only the first result
-    # first_user = User.query.filter_by(name='John').first()
-
-    # # Query users based on a condition and retrieve a single result or None if not found
-    # single_user = User.query.filter_by(name='John').one_or_none()
     
     # Return the all_users as a json object
     users = []
@@ -190,43 +181,56 @@ def identify_user():
     Given an image, run the algorithm to identify the user
     and return the user's profile
     '''
+    # Variables
+    tries = 0   # Number of tries to identify the user
+    global cap  # Webcam capture
+
     # Initialize the detector
     det = Detector()
 
-    # Open the default camera (usually the webcam)
-    cap = cv2.VideoCapture(0)
+    if cap is None:
+        cap = initialize_webcam()
 
-    # Check if the webcam is opened correctly
-    if not cap.isOpened():
-        raise Exception("Could not open video device!")
-
-    # Capture frame-by-frame
-    _, image = cap.read()
-    
-    # # Use a pre-computed image path
-    # image_path = "faces/emanuele_1.jpg"
-    # image = cv2.imread(image_path)
-
-    # Algorithm to identify the user --> Giancarlo  
-    inference = int(det.detect_user(image)) # Fixes: Python type numpy.int64 cannot be converted
-
-    # Create an example user profile
-    user_id = inference + 1 # Because the user_id starts from 1
-    user = UserModel.query.filter_by(id=user_id).first()
-    user_features = user.user_features.decode('utf-8')
-    user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id)
-
-    if user.favorite_game == 'Tic Tac Toe':
-        state_session = 0
-    else:
-        state_session = 20
+    while tries < 3:
+        # Capture frame-by-frame
+        _, image = cap.read()
         
-    # create a session in the session table in the database (session_id, user_id, game_id)
-    new_session = SessionModel(user_id=user.id, state=state_session)
-    db.session.add(new_session)
-    db.session.commit()
+        # # Use a pre-computed image path
+        # image_path = "faces/emanuele_1.jpg"
+        # image = cv2.imread(image_path)
 
-    return user.get_profile()
+        # Algorithm to identify the user
+        print("Trying to identify the user... Attempt: ", tries + 1)
+        inference = int(det.detect_user(image))
+
+        if (inference == -1):
+            print("User not found... Please try again!")
+            tries += 1
+        else:
+            # Create an example user profile
+            user_id = inference + 1 # Because the user_id starts from 1
+            user = UserModel.query.filter_by(id=user_id).first()
+            user_features = user.user_features.decode('utf-8')
+            user = User(user.name, user.surname, user.age, user_features, user.favorite_game, id = user_id)
+
+            if user.favorite_game == 'Tic Tac Toe':
+                state_session = 0
+            else:
+                state_session = 20
+                
+            # create a session in the session table in the database (session_id, user_id, game_id)
+            new_session = SessionModel(user_id=user.id, state=state_session)
+            db.session.add(new_session)
+            db.session.commit()
+            break
+
+    # Release the camera
+    cap.release()
+
+    if tries == 3:
+        return "User not found in Database. Exiting..."
+    else:
+        return render_template('/identify_user.html', user=user.get_profile())
 
 # 2. /api/get_game (the master knows which game to send to the user)
 @app.route('/api/get_game')
@@ -242,30 +246,7 @@ def elaborate_mental_model():
     difficulty_level = calculate_difficulty(last_session.user_id)
     return {'difficulty': difficulty_level}
 
-# 4. /serve_game/{game_name} (set in the current session in the database the game that the user is playing and serve the game to the user)
-# @app.route('/serve_game/<game_name>')
-# def serve_game(game_name):
-#     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
-
-#     # let's suppose we have for now the User Id of the current user
-#     user_id = 0
-#     # Get the profile of the user with user_id from the database
-
-#     user = User('John', 'Doe', 25, "[1,2,3,4,5]", favorite_game  = 'Tic Tac Toe', id = user_id)
-
-
-#     #TODO Suppose here to send message to 
-#     if game_name == 'tic_tac_toe':
-#         # serve the html file in the /tictactoe/tictactoe.hmtl folder
-#         return render_template('/tictactoe/tictactoe.html', user=user.get_profile())
-
-
-#     else:
-#         # serve the html file in the /semantic_ping_pong/semantic_ping_pong.html folder
-#         return "Serve semantic ping pong game"
-        
-
-# 5. /api/{game_name}/ask_user_feedback (receive the feedback from the user and store it in the database)
+# 4. /api/{game_name}/ask_user_feedback (receive the feedback from the user and store it in the database)
 @app.route('/api/<game_name>/ask_user_feedback')
 def ask_user_feedback(game_name):
     '''
@@ -273,7 +254,7 @@ def ask_user_feedback(game_name):
     '''
     assert game_name == 'tic_tac_toe' or game_name == 'semantic_ping_pong', "Invalid game name"
 
-# 6. api/{game_name}/emit_pepper_feedback (send the feedback to the Pepper robot)
+# 5. api/{game_name}/emit_pepper_feedback (send the feedback to the Pepper robot)
 @app.route('/api/<game_name>/emit_pepper_feedback')
 def emit_pepper_feedback(game_name):
     return 'Emit Pepper Feedback ' + game_name
