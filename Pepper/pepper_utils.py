@@ -258,6 +258,7 @@ class SonarEngine(object):
         # Threshold for the front sonar
         self.threshold = self.config['sonar_threshold'] # Default: 0.5 meters (50 cm)
         self.greet = False
+        self.behind_me = False
         self.driver = None
 
     """
@@ -294,6 +295,7 @@ class SonarEngine(object):
         # If the sonar front value is smaller than the threshold, we greet the person
         if (sonar_front_value != 0.0) and (sonar_front_value < self.threshold and not self.greet):
             self.greet = True
+            self.behind_me = False
             self.talk_engine.say("Hello! Let me recognize you.", _async=True)
             self.dance_engine.doHello()
 
@@ -304,8 +306,9 @@ class SonarEngine(object):
             initial_url = "http://127.0.0.1:5002/api/identify_user"
             self.driver.get(initial_url)
             self.dance_engine.resetPosture()
-        elif(sonar_back_value != 0.0) and (sonar_back_value < self.threshold) and not self.greet:
+        elif(sonar_back_value != 0.0) and (sonar_back_value < self.threshold) and not self.greet and not self.behind_me:
             self.talk_engine.say("Hey! I see you're behind me! Please come in front of me, so I can recognize you.", _async=True)
+            self.behind_me = True
         else:
             self.greet = False
 

@@ -186,12 +186,14 @@
                     updatePoints();
                     gameOver = true;
                     sendResult(currentPlayer);
+                    pepperSpeak('You can play again by clicking \'New Game\' button. Or you can change the game by clicking the button at the bottom of the page.');
                 } else if (checkDraw()) {
                     updateMessage('It\'s a draw!');
                     sendResult('draw');
                     gameOver = true;
                     pepperSpeak('It\'s a draw! Good game!');
                     pepperMove('draw');
+                    pepperSpeak('You can play again by clicking \'New Game\' button. Or you can change the game by clicking the button at the bottom of the page.');
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                     
@@ -269,24 +271,6 @@
                   
                     toastBootstrap.show()
                     
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
-        }
-
-        function pepperSpeak(word){
-            //ajax call to get the initial word to the endpoint /api/say/<word>
-            $.ajax({
-                url: endpoint_pepper + '/api/say/' + word,
-                type: 'GET',
-                headers: {
-                    'Content-Type':'application/json',
-                },
-                success: function(response) {
-                    console.log('Pepper spoke successfully');
-                    console.log(response);
                 },
                 error: function(error) {
                     console.log(error);

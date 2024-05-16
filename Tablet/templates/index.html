@@ -115,10 +115,10 @@
                 success: function(response){
                     console.log(response);
                     // redirect to the correct game page
-                    if(response.favorite_game == "tic tac toe"){
+                    if(response.favorite_game == "Tic Tac Toe"){
                         window.location.href = '/serve_game/tic_tac_toe/'+user_id;
                     }
-                    else{
+                    else {
                         window.location.href = '/serve_game/semantic_ping_pong/'+user_id;
                     }
                 },

@@ -196,7 +196,7 @@ def identify_user():
         _, image = cap.read()
         
         # # Use a pre-computed image path
-        # image_path = "faces/emanuele_1.jpg"
+        # image_path = "faces/gianmarco_1.jpg"
         # image = cv2.imread(image_path)
 
         # Algorithm to identify the user

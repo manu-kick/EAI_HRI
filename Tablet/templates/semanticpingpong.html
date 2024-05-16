@@ -17,6 +17,18 @@
             cursor: pointer;
         }
 
+        #newGame{
+            display: block;
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 10px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
     </style>
     <!-- Boostrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -75,6 +87,7 @@
         <button id="changeUserFavoriteGame" class="btn btn-warning">
             Change favorite game to Tic Tac Toe
         </button>
+        <button id="newGame" class="reset-btn btn btn-primary" onclick="resetGame()">New Game</button>
     </div>
 
     <div class="toast-container position-fixed top-0 end-0 p-3">
@@ -90,6 +103,8 @@
             </div>
         </div>
     </div>
+
+
 
     <script>
         var endpoint_pepper = 'http://' + window.location.hostname + ':5003';
@@ -109,10 +124,6 @@
 
                     $('#current_word').text(response);
 
-                    // TODO GIANMARCO send pepper the feedback to ask user to say a word
-                    // ajax call to send the feedback to the endpoint /api/send_feedback
-                    pepperSpeak("Welcome to the game. I will choose the first word to start the game, then it will be your turn to say the next word. Let's start!");
-
                     // Timeout 5 sec
                     setTimeout(function(){
                         pepperSpeak("My word is: " + response + ". Now it's your turn! Say a word!");
@@ -131,6 +142,10 @@
         }
 
         window.onload = function(){
+            // TODO GIANMARCO send pepper the feedback to ask user to say a word
+            // ajax call to send the feedback to the endpoint /api/send_feedback
+            pepperSpeak("Welcome to the game. I will choose the first word to start the game, then it will be your turn to say the next word. Let's start!");
+
             getInitialWord(); //ajax call to get the initial word to the endpoint /api/get-initial-word
         }
 
@@ -235,6 +250,11 @@
                 else{
                     // we have a winner
                     winnerAnimation(role);
+
+                    // Let Pepper speak about a new game
+                    if(role == 'pepper'){
+                        pepperSpeak('You can play again by clicking \'New Game\' button. Or you can change the game by clicking the button at the bottom of the page.');
+                    }
                 }
             } catch (error) {
                 if(error.status == 500){
@@ -356,6 +376,24 @@
             }, 3000, function(){
                 winnerDiv.remove();
             });
+        }
+
+        function resetGame() {
+            // We must reset the points of the user and pepper, delete any entry in the history and get a new word from Pepper
+            $('.pepper_points').text('0');
+            $('.user_points').text('0');
+            words_history = [];
+
+            // Also we must empty whatever it's inside the current word box
+            $('#current_word').text('');
+
+            // Also empty the user input
+            $('#user_input').val('');
+
+            // Re-activate the send button
+            $('#send').attr('disabled', false);
+
+            getInitialWord();
         }
 
         $('#send').click(function(){

@@ -32,8 +32,8 @@
         var endpoint_pepper = 'http://' + window.location.hostname + ':5003';
 
         $(document).ready(function() {
-            pepperSpeak('Hello {{user.name}} {{user.surname}}! I will now start your favorite game, which is {{user.favorite_game}}. Enjoy!');
-            
+            pepperSpeak('Hello {{user.name}} {{user.surname}}! I will now start your favorite game, which is {{user.favorite_game}}.');
+            pepperSpeak('Please remember that if you want to stop the interaction, you need to simply walk away from me and I will stop the game immediately. Have fun!');
             // Timeout
             setTimeout(function() {
                 window.location.href = "http://127.0.0.1:5001/";
