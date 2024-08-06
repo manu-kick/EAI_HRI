@@ -4,6 +4,9 @@
 # Ignore .pyc files
 *.pyc
 
-#ignore
+# Ignore faces directory
+faces/
+
+# Ignore
 word2vec.gen
 word2vec.gen.vectors.npy

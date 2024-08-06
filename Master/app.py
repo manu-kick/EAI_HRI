@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 from User import User
 
 import cv2
-import dlib
 import face_recognition
 import json
 import numpy as np
@@ -148,11 +147,6 @@ def initialize_webcam() -> cv2.VideoCapture:
 
 # Global variables accessible by all the functions
 user = None
-dat_file = "shape_predictor_68_face_landmarks.dat"
-
-# Initialize dlib's face detector (HOG-based) and the facial landmark predictor
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(dat_file)
 
 # Initialize the webcam
 cap = initialize_webcam()

@@ -16,7 +16,6 @@ class TalkEngine(object):
         super(TalkEngine, self).__init__()
         self.services = services
         self.tts = self.services['tts']
-        self.config = self.services['config']
 
     def say(self, text, _async=False):
         self.tts.say(text, _async=_async)
@@ -29,9 +28,6 @@ class DanceEngine(object):
         self.services = services
         self.motion_service = self.services['motion']
         self.posture_service = self.services['posture']
-        self.animation_service = self.services['animation']
-        self.tts = self.services['tts']
-        self.config = self.services['config']
 
     def resetPosture(self):
         self.posture_service.goToPosture("StandInit", 1.0)
@@ -245,10 +241,6 @@ class SonarEngine(object):
 
         # Get the services ALMemory, ALMotion, ALTextToSpeech from the constructor
         self.memory_service = self.services['memory']
-        self.motion_service = self.services['motion']
-        self.posture_service = self.services['posture']
-        self.animation_service = self.services['animation']
-        self.tts = self.services['tts']
         self.config = self.services['config']
 
         # Get the Talk and Dance Engines as well
