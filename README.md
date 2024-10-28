@@ -4,6 +4,20 @@ Project for the course Elective in AI, Human Robot Interaction Module held by Pr
 <i>Developed by Emanuele Rucci, Gianmarco Scarano & Giancarlo Tedesco</i>
 
 ---------------------
+## Instructions (Windows & Linux)
+
+1. Start Choregraphe
+
+2. API Server | Master, Tablet & Pepper (From Miniconda):
+   1. `cd Master && python app.py`
+   2. `cd Tablet && python app.py`
+   3. `conda activate pepper && cd Pepper && python pepper_server.py`
+
+5. Now, open another PowerShell (or Bash) and run the scripts:
+   1. `conda activate pepper && cd Pepper && python main.py`
+   2. `conda activate pepper && cd Pepper && python sonar_sim.py --value 0.3 --sensor SonarFront --duration 600`
+
+---------------------
 
 ## Modules
 This repo contains the implementation of 3 different modules of the project:
